@@ -422,3 +422,148 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - `@dynamic`
 - 动态运行时语言将函数决议推迟到运行时
 - 编译时语言在编译器进行函数决议
+
+
+## 内存管理
+
+##### 内存布局
+- 栈(stack) -- ↓
+  - 方法调用
+- 堆(heap) -- ↑
+  - 通过alloc分配的对象
+- 未初始化数据(.bss)
+  - 未初始化的全局变量 未初始化静态变量
+- 已初始化数据(.data)
+  - 已初始化的全局变量
+- 代码段(.text)
+  - 程序代码
+
+##### 内存管理方案
+
+- 不同场景不同管理方案
+- TaggedPoingter 小对象如`NSNumber`
+- NONPOINTER_ISA
+  - arm64架构
+  - 0-64  1是0否
+    - 0 :indexed 0是纯`isa`指针
+    - 1 :has_assoc 是否关联对象 
+    - 2 :has_cxx_dtor 是否使用过c++
+    - 3->15 + 16->31 + 32->35 共33位来表示内存地址
+    - 36->41 magic
+    - 42 :weakly_referenced 弱引用
+    - 43 :deallocating 是否在进行dealloc操作
+    - 44 :has_sidetable_rc 当前存储引用计数是否到达上限
+    - 45-63 extra_rc 额外引用计数
+- 散列表
+  - `SideTables()`
+    - `spinlock_t` 自旋锁
+      - `spinlock_t` 是一种忙等的锁
+      - 适用于轻量访问
+    - `RefcountMap`引用计数表
+      - `hash`表
+      - `ptr` ----> `Disguise(objc_object)` ----> `size_t`
+      - `size_t`
+        - 0: `weakly_referenced`
+        - 1: `deallocating`
+        - 2-63: 实际的引用计数值 向右偏移俩位来计算
+    - `weak_table_t`弱引用表
+      - `hash`表
+      - `对象指针(key)` ----> `Hash函数` ----> `weak_entry_t(value)`
+
+##### ARC&MRC
+
+- MRC
+  - `alloc`
+    - 经过一系列的调用,最终调用了C函数的`calloc`
+  - `retain`
+    - `SideTable & table = SideTables()[this]` //通过当前对象的指针,通过hash函数计算在SideTables找到对应的sizeTable
+    - `size_t &refcntStorage = table.refcnts[this]`
+    - `refcntStorage += SIDE_TABLE_RC_ONE`
+  - `release`
+    - `SideTable & table = SideTables()[this]` //通过当前对象的指针,通过hash函数计算在SideTables找到对应的sizeTable
+    - `RefcountMap::iterator it = table.fefcnts.find(this)`
+    - `refcntStorage -= SIDE_TABLE_RC_ONE`
+  - `retainCount`
+    - `SideTable & table = SideTables()[this]` 
+    - `sizt_t refcnt_result = 1`
+    - `RefcountMap::iterator it = table.fefcnts.find(this)`
+    - `refcnt_result += it->secont >> SIDE_TABLE_RC_SHIFT`
+  - `autoRelease`
+  - `dealloc`
+    - `_objc_rootDealloc()`
+    - `rootDealloc()` 作如下判断
+      - `nonpointer_isa`
+      - `weakly_referenced`
+      - `has_assoc`
+      - `has_cxx_dtor`
+      - `has_sidetable_rc`
+    - 结果为YES 调用`C函数free()` 
+    - 结果为NO 调用`object_dispose()`
+      - `objc_destructInstance()` 作如下判断
+        - `hasCxxDtor`
+        - 结果为YES 调用 `objc_cxxDestruct()`
+        - 结果为NO 调用 `hasAssociatedObjects`
+          - 结果为YES, `_objc_remove_associations()`
+          - 结果为NO, `clearDeallocating()`
+            - `sidetable_clearDeallocating()`
+            - `weak_clear_no_lock()` 将指向该对象的弱引用指针置为nil
+            - `table.refcnts.erase()` 引用技术表清除引用计数
+      - `C函数free()`
+- ARC
+  - `ARC`是`LLVM`和`Runtime`协作的结果
+  - 禁止手动调用`retain`,`release`,`retainCount`,`dealloc`
+  - `weak`,`strong`
+
+##### 弱引用
+
+> `id __weak obj1 = obj;` -- > `objc_initWeak(&obj1,obj)`
+>  一个被声明为__weak对象指针,会经过如下方法 添加
+- `objc_initWeak()`
+- `storeWeak()`
+- `weak_register_no_lock()`
+
+> 问:系统是怎样把一个weak变量添加到他所对应的的弱引用表中的?
+> 答:一个被声明为__weak的对象指针,经过编译器编译之后,会调用`objc_initWeak()`经过一系列函数调用栈,最终在`weak_register_no_lock()`中进行弱引用变量添加,添加的位置是通过一个hash算法进行位置查找,如果查找位置有当前对象的所对应的的弱引用数组,那么就将新弱引用变量加到数组里面,如果没有,就创建一个弱引用数组,将第0个设置为weak,其他位置置为nil
+
+
+> 问:当一个weak释放时,怎么置为nil?
+> 答:当一个对象被`dealloc`之后,在`dealloc`内部实现当中会调用`weak_clear_no_lock()`,在函数实现当中会根据当前对象的指针查找所对应的的弱引用表,把当前对象所对应的弱引用拿出来是一个数组,遍历置为nil
+##### 自动释放池
+
+- 是以栈为接点通过双向链表的形式组合而成的
+- 是和线程一一对应的
+> 问: `AutoreleasePool`实现原理
+> 在当次runloop将要结束的时候调用`AutoreleasePoolPage::pop()`
+
+> 问: `AutoreleasePool`嵌套使用
+> 多次嵌套就是多次插入哨兵对象
+
+
+> 问: 什么情况下使用
+> 在for循环中alloc图片等数据消耗较大的场景手动插入autoreleasepool
+> 
+- `@autoreleasepool{}` 编译后转换为
+  -  `void *ctx = objc_autoreleasePoolPush()`
+  -  `{}`
+  -  `objc_autoreleasePoolPop(ctx)`
+
+- `AutoreleasePoolPage`
+  - `id *next`
+  - `AutoreleasePoolPage *const parent`
+  - `AutoreleasePoolPage *child`
+  - `pthread_t const thread`
+##### 循环引用
+
+- 自循环引用
+- 相互循环引用
+- 多循环引用
+
+- __weak
+- __block
+  - MRC下,不会增加引用计数,避免循环引用
+  - ARC下,会被强引用,需要手动解环
+- __unsafe_unretained
+  - 修饰对象不会增加引用计数,避免循环引用
+  - 会产生悬垂指针
+- NSTimer的循环引用问题
+
