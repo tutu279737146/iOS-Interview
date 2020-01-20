@@ -327,3 +327,98 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - 读写性
 - 原子性
 - 内存管理
+
+## Runtime
+
+##### 数据结构
+
+##### **objc_object**
+
+- `id` 类型
+- `isa_t` 共用体
+  - 指针型`isa` : `isa`64位的值代表`Class`地址
+  - 非指针型`isa`:  `isa`64位的部分值代表`Class`地址
+- 关于`isa`操作相关方法
+  - 对象指向类对象: 实例------>Class
+  - 类对象指向元类对象: Class------>MetaClass
+- 弱引用相关
+- 关联对象相关
+- 内存管理
+
+##### **objc_class**
+
+- `Class`类型,继承于`objc_object`
+- `Class` `superClass`
+- `cache_t` `cache` 方法缓存
+  - 特点:
+    - 用于快速查找方法执行函数
+    - 可增量扩展的哈希表结构
+    - 是局部性原理的最佳应用
+  - 结构
+    - `bucket_t`
+      - `key`---->`selector`
+      - `IMP`---->无类型的函数指针
+- `class_data_bits_t` `bits`
+    - `class_data_bits_t`是对 `class_rw_t`的封装
+    - `class_rw_t`代表了类相关的读写信息,是对`class_ro_t`的封装
+      - `class_ro_t`
+      - `protocols` 二维数组
+      - `properties` 二维数组
+      - `methods` 二维数组
+    - `class_ro_t`类的只读信息
+      - `name` 类名 `NSClassFromString(aClassName)`
+      - `ivars` 成员变量 --- 一维数组
+      - `properties` 属性 --- 一维数组
+      - `protocols` 遵循的协议 --- 一维数组
+      - `methodList` 方法 --- 一维数组
+
+- `method_t` 
+  - `SEL name` 函数名称
+  - `const char *types`  函数返回值和参数
+  - `IMP imp`  函数体
+
+- `Type Encodings`
+  - `const char *types`  返回值+参数1+参数2+....
+  - `-(void)aMethod`-->`v@:`-->`void`+`id`+`SEL`
+
+##### **对象,类对象,元类对象**
+- 一张图片
+
+##### **消息传递**
+
+- `void objc_msgSend(id self, Sel op, ...)`
+- `void objc_msgSendSuper(struct objc_super *super, Sel op, ...)`
+
+##### **缓存查找**
+
+> 给定值是SEL,目标值是对应的`bucket_t`中的`IMP`
+> 
+- cache_key_t ----> f(key)---->bucket_t
+- f(key) = key &mask
+
+##### **当前类中查找**
+
+- 排序好的,采用二分查找法查找相应的执行函数
+- 未排序的,采用一般遍历法查找
+
+##### **父类中查找**
+- curClass ----> superClass
+
+##### **消息转发**
+- `resolveInstanceMethod`
+- `forwardingTargetForSelector`
+- `methodSignatureForSelector`和`forwardInvocation`
+
+##### **Method-Swizzling**
+- `load`
+##### **动态添加方法**
+
+- `class_addMethod(Class cls, SEL name, IMP imp,
+    const char *types)`
+- `performSelector: `
+
+##### **动态方法解析**
+
+- `@dynamic`
+- 动态运行时语言将函数决议推迟到运行时
+- 编译时语言在编译器进行函数决议
