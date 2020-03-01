@@ -567,3 +567,287 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   - 会产生悬垂指针
 - NSTimer的循环引用问题
 
+## Block
+
+##### Block介绍
+- Block是将`函数`及其`执行上下文`封装起来的`对象`
+
+怎么样来理解这段话呢,我们通过源码来进行分析
+
+- 创建一个`MCBlock`文件,在其`.m`中写如下代码
+
+  ```
+  - (void) method {
+      int multiplier = 6;
+      int(^Block)(int) = ^int(int num){
+          return num *multiplier;
+      };
+      Block(2);
+  }
+  ```
+- `clang -rewrite-objc MCBlock.m` 通过clang编译器编辑生成`MCBlock.cpp`文件
+
+  ```
+   // _I_MCBlock_method I代表是当前类`MCBlock`类的实例方法
+   static void _I_MCBlock_method(MCBlock * self, SEL _cmd) {
+      int multiplier = 6;
+      int(*Block)(int) = ((int (*)      (int))&__MCBlock__method_block_impl_0((void *)__MCBlock__method_block_func_0, &__MCBlock__method_block_desc_0_DATA, multiplier));
+      ((int (*)(__block_impl *, int))((__block_impl *)Block)->FuncPtr)((__block_impl *)Block, 2);
+  }
+    ``` 
+
+- `__MCBlock__method_block_impl_0`
+
+  ```
+  struct __MCBlock__method_block_impl_0 {
+    struct __block_impl impl;
+    struct __MCBlock__method_block_desc_0* Desc;
+    int multiplier;
+    __MCBlock__method_block_impl_0(void *fp, struct __MCBlock__method_block_desc_0 *desc, int _multiplier, int flags=0) : multiplier(_multiplier) {
+      impl.isa = &_NSConcreteStackBlock;
+      impl.Flags = flags;
+      impl.FuncPtr = fp;
+      Desc = desc;
+    }
+  };
+  ```
+- `_block_impl`
+
+    ```struct __block_impl {
+      void *isa;
+      int Flags;
+      int Reserved;
+      void *FuncPtr;
+    };
+    ``` 
+
+- `__MCBlock__method_block_func_0`
+
+    ```
+    static int __MCBlock__method_block_func_0(struct __MCBlock__method_block_impl_0 *__cself, int num) {
+      int multiplier = __cself->multiplier; // bound by copy
+      return num *multiplier;
+    }
+    ```
+##### 截获变量
+- 局部变量(基本数据类型) 
+  - 截获其值
+  
+  ```
+  - (void) method {
+      int multiplier = 6;
+      int(^Block)(int) = ^int(int num){
+          return num *multiplier;
+      };
+      multiplier = 4;
+      Block(2);
+  }
+  // 12
+  ```
+- 局部变量(对象类型)    
+  - 连同其所有权修饰符一起截获
+- 静态局部变量
+  - 指针形式
+
+  ```
+  - (void) method {
+      static int multiplier = 6;
+      int(^Block)(int) = ^int(int num){
+          return num *multiplier;
+      };
+      multiplier = 4;
+      Block(2);
+  }
+  // 8
+  ```
+- 全局变量
+  - 不截获
+- 静态全局变量
+  - 不截获
+
+**源码分析**
+```
+// 全局变量
+int global_var = 4;
+// 静态全局变量
+static int static_global_var = 5;
+
+- (void)method{
+    // 基本数据类型局部变量
+    int var = 1;
+    // 对象类型局部变量
+    __unsafe_unretained id unsafe_obj = nil;
+    __strong id strong_obj = nil;
+    // 局部静态变量
+    static int static_var = 3;
+    
+    void(^Block)(void) = ^{
+        NSLog(@"局部变量<基本数据类型> var %d",var);
+        NSLog(@"局部变量<__unsafe_unretained 对象类型> var %@",unsafe_obj);
+        NSLog(@"局部变量<__strong 对象类型> var %@",strong_obj);
+        NSLog(@"局部 静态变量 %d",static_var);
+        NSLog(@"全局变量 %d",global_var);
+        NSLog(@"静态全局变量 %d",static_global_var);
+    };
+    Block();
+}
+```
+**clang**后
+```
+int global_var = 4;
+
+static int static_global_var = 5;
+
+struct __MCBlock__method_block_impl_0 {
+  struct __block_impl impl;
+  struct __MCBlock__method_block_desc_0* Desc;
+  // 截获局部变量的值
+  int var;
+  // 连同所有权修饰符一起截获
+  __unsafe_unretained id unsafe_obj;
+  __strong id strong_obj;
+  // 以指针的形式截获局部变量
+  int *static_var;
+  // 全局变量,全局静态变量不截获
+  __MCBlock__method_block_impl_0(void *fp, struct __MCBlock__method_block_desc_0 *desc, int _var, __unsafe_unretained id _unsafe_obj, __strong id _strong_obj, int *_static_var, int flags=0) : var(_var), unsafe_obj(_unsafe_obj), strong_obj(_strong_obj), static_var(_static_var) {
+    impl.isa = &_NSConcreteStackBlock;
+    impl.Flags = flags;
+    impl.FuncPtr = fp;
+    Desc = desc;
+  }
+};
+```
+##### __block修饰符
+
+###### 使用场景 
+- 一般情况下,对被截获的变量进行`赋值`操作的时候需要加`__block`修饰符
+
+  ```
+  __block NSMutableArray *array = nil;
+  void(^Block)(void) = ^{
+    array = [NSMutableArray array]; // 赋值
+  } ;
+  Block();
+  ```
+- 使用情况下不需要
+
+  ```
+  NSMutableArray *array = [NSMutableArray array];
+  void(^Block)(void) = ^{
+    [array addObject:@123]; // 使用 
+  } ;
+  Block();
+  ```
+  
+###### 做了什么
+
+- 使用`__block`修饰符的变量变成了对象
+  ```
+  - (void) method {
+      __block int multiplier = 6;
+      int(^Block)(int) = ^int(int num){
+          return num *multiplier;
+      };
+      multiplier = 4;
+      Block(2);
+  }
+  // 8
+  ```
+  
+  ```
+   Struct _Block_byref_multiplier_0{
+      void *_isa;
+      _Block_byref_multiplier_0 *_forwarding;
+      int _flags;
+      int size;
+      int multiplier;
+   }
+  ```  
+  `multiplier = 4;` `==>` `(multiplier.__forwarding ->multiplier) = 4;`
+  这一步操作,`multiplier`已经变成了对象,通过`multiplier`对象中同类型的`__forwarding`找到对象(由于这是栈上的block,此时__forwarding指针指向的是自己),进行赋值操作
+  
+
+##### Block内存管理
+###### 种类
+- 栈 `_NSConcreteStackBlock`
+- 堆 `_NSConcreteMallocBlock`
+- 全局 `_NSConcreteGlobalBlock`
+###### `copy`操作
+- 栈 堆上生成block
+- 堆 什么都不做
+- 全局 增加引用计数
+
+###### `__forwarding`指针作用
+
+一个在栈上,被`__block`修饰的变量,经过`copy`操作,`__forwarding`指向了堆上的`__block`变量,而堆上的`__block`变量中的`__forwarding`指向自己
+
+```
+{
+    __block int multiplier = 10;
+    _blk = ^int(int num){
+        return num * multiplier;
+    };
+    multiplier = 6;
+    [self executeBlock];
+}
+```
+```
+  - (void)executeBlock{
+      int result = _blk(4);
+      NSLog(@"%d",result);
+  }
+  
+  // 24;
+```
+- 栈上创建了局部变量`multiplier`,并且用`__block`修饰,此时`multiplier`变成了一个对象
+- `_blk`变量作为当前对象的一个成员变量,当对其进行赋值操作的时候,会对其进行`copy`操作,此时堆上会生成一个`_blk`副本
+- `multiplier = 6;`不是对`multiplier`变量进行赋值,而是通过`multiplier`对象`__forwarding`指针对其成员变量`multiplier`进行赋值
+- 当第一段代码执行完后: 如果`_blk`没有进行`copy`操作,`multiplier = 6;`修改的就是栈上对应的`__block`修饰的变量
+- 如果`_blk`进行`copy`操作,`multiplier = 6;`通过栈上的`multiplier`的`__farwarding`指针找到堆上的`__block`变量对应的副本进行修改
+- 第二段代码调用堆上的`_blk`,入参是4,所以是24
+
+
+##### Block循环引用
+
+- 自循环
+
+  ```
+   {
+      _array = [NSMutableArray arrayWithObjects:@"block", nil];
+      _strBlk = ^NSString *(NSString *num){
+          return [NSString stringWithFormat:@"hello %@",_array[0]];
+      };
+      _strBlk(@"hello");
+  }
+  ```
+  - `_strBlk`作为当前对象的一个成员变量,一般copy修饰,所以`self`持有`_strBlk`
+  - `_strBlk`表达式中使用了`_array`,由于`Block`截获变量时将其权限修饰符的特性,所以`_strBlk`中有一个`__strong`指针的`self`;
+  - `__weak`解决: `__weak NSArray *weakArray = _array`
+- 大环循环
+
+  ```
+  {
+    __block MCBlock *blockSelf = self;
+    _blk = ^int(int num){
+        return num *blockSelf.var;
+    };
+    _blk(3);
+  }
+  ```
+  - `MRC`下不会产生循环引用
+  - `ARC`下会产生循环引用,引起内存泄露
+    - 对象持有`_blk`
+    - `blk`持有`__block`变量
+    - `__block`变量持有原对象(__farwarding指针指向自己)
+    - 解决办法如下,但是有一个弊端,就是如果不执行这段代码的话,闭环永远存在
+    ```
+    {
+      __block MCBlock *blockSelf = self;
+      _blk = ^int(int num){
+          int result = num *blockSelf.var;
+          blockSelf = nil;
+          return result;
+      };
+      _blk(3);
+    }
+    ```
