@@ -9,11 +9,19 @@
   - [弱引用](#弱引用)
   - [自动释放池](#自动释放池)
 - [Objective-C语言特性](#Objective-C语言特性)
+  - [分类](#分类)
+  - [扩展](#扩展)
+  - [代理](#代理)
+  - [通知](#通知)
+  - [KVO](#KVO)
+  - [KVC](#KVC)
 - [Block](#Block)
 - [GCD](#GCD)
 - [Runtime](#Runtime)
 - [Runloop](#Runloop)
 - [网络](#网络)
+
+
 #### Objective-C语言特性
 ##### 分类
 ###### 分类做了什么事情
