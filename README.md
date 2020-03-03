@@ -1,17 +1,15 @@
 # iOS-Interview
 ### 面试知识点整理
 
-- UI视图相关
-- 内存管理相关
+- [UI视图相关](#UI视图相关)
+- [内存管理相关](#内存管理相关)
 - [Objective-C语言特性](#Objective-C语言特性)
-- [完整App](#完整App)
-- Block
-- GCD
-- Runtime
-- Runloop
-- 网络
+- [Block](#Block)
+- [GCD](#GCD)
+- [Runtime](#Runtime)
+- [Runloop](#Runloop)
+- [网络](#网络)
 #### Objective-C语言特性
-#### 完整App
 ##### 分类
 ###### 分类做了什么事情
 - 声明私有方法
