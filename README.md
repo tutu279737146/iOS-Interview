@@ -1,5 +1,5 @@
 # iOS-Interview
-### 面试知识点整理
+> 面试知识点整理
 
 - [UI视图相关](#UI视图相关)
 - [内存管理](#内存管理)
@@ -22,19 +22,17 @@
 - [网络](#网络)
 
 
-#### Objective-C语言特性
-##### 分类
+## Objective-C语言特性
+#### 分类
 ###### 分类做了什么事情
 - 声明私有方法
 - 分解体积庞大的类文件
 - Framework私有方法公开化
 
-
 ###### 分类的特点
 - 运行时决议 编译的时候宿主类没有分类的方法，运行时runtime才真实的添加到宿主类
 - 可以为系统类添加分类 
  
-
 ###### 分类中都可以添加
 - 实例方法
 - 类方法
@@ -67,7 +65,6 @@
 - `map_images_nolock`
 - `_read_images`
 - `_remethodizeClass`
-
 
 ###### 源码分析
 - `remethodizeClass`
@@ -190,7 +187,7 @@
 - 同名分类方法谁能生效取决于编译顺序
 - 名字相同的分类会引起编译报错 
 
-##### 关联对象
+#### 关联对象
 
 ###### 给分类添加`成员变量`
 
@@ -294,7 +291,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
     
 }
 ```
-##### 扩展
+#### 扩展
 ###### 扩展用法
 - 声明私有属性
 - 声明私有方法
@@ -305,7 +302,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   - 只有声明,没有实现,多数情况下寄生于宿主的.m中
   - 不能为系统类添加扩展
 
-##### 代理
+#### 代理
 ###### 含义
 - 是一种软件设计模式,代理模式
 - iOS当中以@protocol形式实现
@@ -314,7 +311,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 ###### 遇到的问题
 - 一般声明为weak以规避循环引用
 
-##### 通知
+#### 通知
 ###### 含义
 - 使用观察者模式来实现的用于跨层传递消息的机制
 - 传递方式为一对多
@@ -322,19 +319,18 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 ###### 实现机制
 - 创建一个类`NSNotificationCenter`,维护一个表`Notification_Map`,`key`为`notificationName`,`value`为`Observers_List`
 - `Observers_List`里面应该有`Observer`及 接受 发送通知的相关方法
-##### KVO
+#### KVO
 ###### 什么是KVO
 - KVO是Objective-C对观察者模式的又一实现
 - 使用了isa混写(isa-swizzling)技术实现KVO
 - KVC设置value能生效
 - 通过成员变量直接赋值不生效,手动添加KVO才会生效
-###### 
 
-##### KVC
+#### KVC
 - Key-value coding缩写
 - 破坏了面向对象的编程思想
 
-##### 属性关键字
+#### 属性关键字
 
 - 读写性
 - 原子性
@@ -342,9 +338,8 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 
 ## Runtime
 
-##### 数据结构
-
-##### **objc_object**
+#### 数据结构
+###### **objc_object**
 
 - `id` 类型
 - `isa_t` 共用体
@@ -357,7 +352,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - 关联对象相关
 - 内存管理
 
-##### **objc_class**
+###### **objc_class**
 
 - `Class`类型,继承于`objc_object`
 - `Class` `superClass`
@@ -393,43 +388,43 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   - `const char *types`  返回值+参数1+参数2+....
   - `-(void)aMethod`-->`v@:`-->`void`+`id`+`SEL`
 
-##### **对象,类对象,元类对象**
+###### **对象,类对象,元类对象**
 - 一张图片
 
-##### **消息传递**
+###### **消息传递**
 
 - `void objc_msgSend(id self, Sel op, ...)`
 - `void objc_msgSendSuper(struct objc_super *super, Sel op, ...)`
 
-##### **缓存查找**
+###### **缓存查找**
 
 > 给定值是SEL,目标值是对应的`bucket_t`中的`IMP`
 > 
 - cache_key_t ----> f(key)---->bucket_t
 - f(key) = key &mask
 
-##### **当前类中查找**
+###### **当前类中查找**
 
 - 排序好的,采用二分查找法查找相应的执行函数
 - 未排序的,采用一般遍历法查找
 
-##### **父类中查找**
+###### **父类中查找**
 - curClass ----> superClass
 
-##### **消息转发**
+###### **消息转发**
 - `resolveInstanceMethod`
 - `forwardingTargetForSelector`
 - `methodSignatureForSelector`和`forwardInvocation`
 
-##### **Method-Swizzling**
+###### **Method-Swizzling**
 - `load`
-##### **动态添加方法**
+###### **动态添加方法**
 
 - `class_addMethod(Class cls, SEL name, IMP imp,
     const char *types)`
 - `performSelector: `
 
-##### **动态方法解析**
+###### **动态方法解析**
 
 - `@dynamic`
 - 动态运行时语言将函数决议推迟到运行时
@@ -437,8 +432,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 
 
 ## 内存管理
-
-##### 内存布局
+#### 内存布局
 - 栈(stack) -- ↓
   - 方法调用
 - 堆(heap) -- ↑
@@ -450,7 +444,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - 代码段(.text)
   - 程序代码
 
-##### 内存管理方案
+#### 内存管理方案
 
 - 不同场景不同管理方案
 - TaggedPoingter 小对象如`NSNumber`
@@ -482,7 +476,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
       - `hash`表
       - `对象指针(key)` ----> `Hash函数` ----> `weak_entry_t(value)`
 
-##### ARC&MRC
+#### ARC&MRC
 
 - MRC
   - `alloc`
@@ -526,7 +520,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   - 禁止手动调用`retain`,`release`,`retainCount`,`dealloc`
   - `weak`,`strong`
 
-##### 弱引用
+#### 弱引用
 
 > `id __weak obj1 = obj;` -- > `objc_initWeak(&obj1,obj)`
 >  一个被声明为__weak对象指针,会经过如下方法 添加
@@ -540,7 +534,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 
 > 问:当一个weak释放时,怎么置为nil?
 > 答:当一个对象被`dealloc`之后,在`dealloc`内部实现当中会调用`weak_clear_no_lock()`,在函数实现当中会根据当前对象的指针查找所对应的的弱引用表,把当前对象所对应的弱引用拿出来是一个数组,遍历置为nil
-##### 自动释放池
+#### 自动释放池
 
 - 是以栈为接点通过双向链表的形式组合而成的
 - 是和线程一一对应的
@@ -564,7 +558,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   - `AutoreleasePoolPage *const parent`
   - `AutoreleasePoolPage *child`
   - `pthread_t const thread`
-##### 循环引用
+#### 循环引用
 
 - 自循环引用
 - 相互循环引用
@@ -581,7 +575,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 
 ## Block
 
-##### Block介绍
+#### Block介绍
 - Block是将`函数`及其`执行上下文`封装起来的`对象`
 
 怎么样来理解这段话呢,我们通过源码来进行分析
@@ -641,7 +635,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
       return num *multiplier;
     }
     ```
-##### 截获变量
+#### 截获变量
 - 局部变量(基本数据类型) 
   - 截获其值
   
@@ -729,7 +723,7 @@ struct __MCBlock__method_block_impl_0 {
   }
 };
 ```
-##### __block修饰符
+#### __block修饰符
 
 ###### 使用场景 
 - 一般情况下,对被截获的变量进行`赋值`操作的时候需要加`__block`修饰符
@@ -779,7 +773,7 @@ struct __MCBlock__method_block_impl_0 {
   这一步操作,`multiplier`已经变成了对象,通过`multiplier`对象中同类型的`__forwarding`找到对象(由于这是栈上的block,此时__forwarding指针指向的是自己),进行赋值操作
   
 
-##### Block内存管理
+#### Block内存管理
 ###### 种类
 - 栈 `_NSConcreteStackBlock`
 - 堆 `_NSConcreteMallocBlock`
@@ -819,7 +813,7 @@ struct __MCBlock__method_block_impl_0 {
 - 第二段代码调用堆上的`_blk`,入参是4,所以是24
 
 
-##### Block循环引用
+#### Block循环引用
 
 - 自循环
 
