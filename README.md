@@ -856,3 +856,171 @@ struct __MCBlock__method_block_impl_0 {
       _blk(3);
     }
     ```
+
+## 多线程
+
+#### GCD
+###### 同步 异步 串行 并发
+- 组合1 同步分派任务到串行队列
+  > `dispatch_sync(serial_queue,^{//任务})`
+  > 
+    ```
+    // 头条面试题  死锁
+    - (void)viewDidLoad{
+        dispatch_sync(dispatch_get_main_queue(),^{
+        [self doSomething];
+        }); 
+    }
+    // 原因:队列引起的循环等待
+    ```
+     ```
+    // 改为异步
+    - (void)viewDidLoad{
+        dispatch_async(dispatch_get_main_queue(),^{
+        [self doSomething];
+        }); 
+    }
+    // 原因:队列引起的循环等待 主队列不管同步还是异步方式添加都要在主线程中进行处理
+    ```
+     ```
+    // 改为自定义串行队列
+    - (void)viewDidLoad{
+        dispatch_sync(serialQueue,^{
+        [self doSomething];
+        }); 
+    }
+    // 正常运行
+    ```
+- 组合2 异步分派任务到串行队列
+  > `dispatch_async(serial_queue,^{//任务})`
+
+    ```
+    - (void)viewDidLoad{
+        dispatch_async(dispatch_get_main_queue(),^{
+          [self doSomething];// 刷新UI
+        }); 
+    }
+    ```
+- 组合3 同步分派任务到并发队列
+  > `dispatch_sync(concurrent_queue,^{//任务})`
+  
+    ```
+    // 美团面试
+    - (void)viewDidLoad{
+        NSLog(@"1");
+        dispatch_sync(global_queue,^{
+          NSLog(@"2");
+            dispatch_sync(global_queue,^{
+              NSLog(@"3");
+          }); 
+          NSLog(@"4");
+        }); 
+        NSLog(@"5");
+    }
+    // 12345
+    ```
+- 组合4 异步分派任务到并发队列
+  > `dispatch_async(concurrent_queue,^{//任务})`
+
+    ```
+    // 腾讯
+     - (void)viewDidLoad{
+        dispatch_async(global_queue,^{
+          NSLog(@"1");
+          [self performSelector:@selector(printLog) withObject:nil afterDelay:0]; 
+          NSLog(@"3");
+        }); 
+    }
+    -(void)printLog{NSLog(@"2");}
+    // 13
+    // 异步方式分派到global_queue队列,子线程执行没有开启runloop
+    ```
+###### dispatch_barrier_async() 
+- 用来实现多读单写
+###### dispatch_group_t
+
+#### NSOperation
+- 优点
+  - 添加任务依赖
+  - 任务执行状态的控制
+    - isReady
+    - isExecuting
+    - isFinished
+    - isCancelled
+    - 重写了`main`方法,底层控制变更任务执行完成的状态及任务退出状态
+    - 重写了`start`方法,自行控制任务状态
+  - 最大并发量
+
+- 面试题 
+  - 系统是怎么样移除一个isFinished = YES的NSOperation? 通过KVO
+#### NSThread
+###### 启动流程
+- start()
+- 创建pthread
+- main()
+- [target performSelector:selector]
+- exit()
+###### 常驻线程
+- 见runloop
+#### 多线程与锁
+
+###### @synchronized
+- 创建单例对象使用,保证多线程环境下创建的对象是唯一的
+###### atomic
+- 属性关键字 对被修饰的对象进行原子操作(不负责使用)
+  - @property(atomic)NSMutableArray *arr;
+  - self.array = [NSMutableArray array];  可以
+  - [self.array addObject:obj]  不可以
+###### OSSpinLock 
+- 自旋锁
+- 循环等待访问,不释放当前资源
+- 用于轻量级数据访问,例如简单的int值的+1/-1操作,系统源码层面引用计数简单的+1/-1操作
+###### NSRecursiveLock
+
+###### NSLock
+- 面试题(蚂蚁金服)
+  ```
+  - (void)methodA{
+      [lock lock];
+      [self methodB];
+      [lock unlock];
+  }
+
+  - (void)methodB{
+      [lock lock];
+      // 操作逻辑
+      [lock unlock];
+  }
+  
+  // 死锁
+  // 某一线程调取lock方法获取到这个锁,然后又对同一把锁再次调用`lock`方法,已经获取到锁,再次去获取锁,造成死锁
+  // 使用递归锁
+  ```
+###### dispatch_semaphore_t
+
+- dispatch_semaphore_create(1)
+  - 源码
+
+  ```
+  struct semaphore{
+    int value;
+    List<thread>;
+  }
+  ```
+- dispatch_semaphore_wait(semaphore,DISPATCH_TIME_FOREVER);
+  -  源码
+  ```
+  {
+    S.value = S.value - 1;
+    if S.value < 0 then Block(S.list);阻塞是一个主动行为
+  }
+  ``` 
+
+- dispatch_semaphore_signal(semaphore)
+  -  源码
+  ```
+  {
+    S.value = S.value + 1;
+    if S.value <= 0 then wakeup(S.list);唤醒是一个被动行为
+  }
+  ``` 
