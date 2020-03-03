@@ -23,6 +23,10 @@
   - [多线程与锁](#多线程与锁)
 - [Runtime](#Runtime)
 - [Runloop](#Runloop)
+  - [概念](#概念)
+  - [数据结构](#数据结构)
+  - [Runloop与NSTimer](#Runloop与NSTimer)
+  - [Runloop与多线程](#Runloop与多线程)
 - [网络](#网络)
 
 ## 内存管理
@@ -1028,3 +1032,76 @@ struct __MCBlock__method_block_impl_0 {
     if S.value <= 0 then wakeup(S.list);唤醒是一个被动行为
   }
   ``` 
+## Runloop
+
+#### 概念
+> Runloop是通过内部维护的`事件循环`来对`事件/消息进行管理`的一个对象
+> 
+- 没有消息需要处理时,休眠以避免资源占用
+  - 用户态 --> 内核态
+
+- 有消息需要处理时,立刻被唤醒
+  - 内核态 --> 用户态
+
+#### 数据结构
+> NSRunloop是对CFRunloop的封装,提供了面向对象的API
+##### CFRunloop
+- pthread (runloop跟线程是一一对应关系)
+- currentMode (CFRunLoopMode)
+- modes (NSMutableSet<CFRunLoopMode *>)
+- commonModes (NSMutableSet<NSString *>)
+- commonModeItems (NSMutableSet<observer,timer,source *>)
+##### CFRunloopMode
+- name (NSDefaultRunloopMode)
+- sources0 (NSMutableSet)
+- sources1 (NSMutableSet)
+- observers (NSMutableArray)
+- timers (NSMutableArray)
+##### Source/Timer/Observer
+###### CFRunLoopSource
+- source0
+  - 需要手动唤醒线程
+- source1
+  - 具备唤醒线程能力
+
+###### CFRunLoopTimer
+- 基于事件的定时器
+- 和NSTimer是`toll-free bridged`
+
+###### CFRunLoopObserver
+> 观测时间点
+- kCFRunLoopEntry (runloop启动)
+- kCFRunLoopBeforeTimers (将要对timer进行观察处理)
+- kCFRunLoopBeforeSources (将要对sources进行观察处理)
+- kCFRunLoopBeforeWaiting (将要进入休眠 用户态-->内核态)
+- kCFRunLoopAfterWaiting (内核态-->用户态)
+- kCFRunLoopeExit (runloop退出)
+##### CommonMode特殊性
+- CommonMode不是实际存在的一种Mode
+- 是同步Source/Timer/Observer到多个Mode中的一种技术方案
+##### 事件循环的实现机制
+###### void CFRunLoopRun()
+- 1.即将进入Runloop,发通知
+- 2.将要处理Timer/Source0事件, 发通知
+- 3.处理source0事件
+- 4.如果有source1事件处理,todo跳转8
+- 5.没事件处理,线程将要休眠,发通知
+- 6.休眠,等待唤醒
+  - Source1唤醒
+  - Timer事件唤醒
+  - 外部手动唤醒
+- 7.线程刚被唤醒,发通知
+- 8.处理唤醒时收到的消息,处理完后回到2
+- 9.即将推出RunLoop,发通知
+#### Runloop与NSTimer
+###### void CFRunLoopAddTimer(runLoop,timer,commonMode)
+
+#### Runloop与多线程
+###### 关系
+- 一一对应
+- 自己创建的线程没有RunLoop
+###### 怎么实现一个常驻线程
+- 为当前线程开启一个RunLoop
+- 向该RunLoop中添加一个Port/Source等维护RunLoop的事件循环
+- 启动该RunLoop
+
