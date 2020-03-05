@@ -1231,3 +1231,137 @@ struct __MCBlock__method_block_impl_0 {
 - 向该RunLoop中添加一个Port/Source等维护RunLoop的事件循环
 - 启动该RunLoop
 
+# 网络
+
+#### HTTP协议
+> 超文本传输协议
+> 
+##### 请求/响应报文
+- 方式
+  - GET
+  - POST
+  - HEAD
+  - PUT
+  - DELETE
+  - OPTIONS
+
+- GET POST区别
+  - GET 获取资源 
+    - 安全的 不应该引起server端任何状态变化
+    - 幂等的 同一个请求方法执行多次跟执行一次的效果完全相同
+    - 可缓存的 请求是否可以被缓存
+
+  - POST 处理资源 
+      - 不安全的 
+      - 不幂等的 
+      - 不可缓存的
+#### 链接建立流程
+
+###### 三次握手
+- 为什么是3次握手?(超时)
+  - Client第一次发送syn1,超时了,Server没收到
+  - Client启动超时重发策略,发送了syn2,Server收到以后,建立链接;
+  - 此时第一次发送syn1的也收到,Server以为要再次建立链接
+###### 四次挥手
+- Client-->FIN-->Server
+- Server-->ACK-->Client(半关闭状态)
+- Server-->FIN+ACK-->Client
+- Client-->ACK-->Server
+
+##### HTTP特点
+###### 无连接
+- HTTP的持久链接
+  - Connection: keep-alive
+  - time:20
+  - max:10
+- HTTP的持久链接好处
+  - 提升效率,减少建立连接的数量 
+- 怎么判断一个请求是否结束
+  > 在一个tcp连接里面发送了多次http请求,怎么区分前一个请求结束了,后一个请求开始
+  - Content-length: 1024(请求报文跟响应报文都有头部字段,根据服务端响应的数据大小结束数据字节数是否到达1024)
+  - chunked,最后会有一个空的chunked
+###### 无状态
+- Cookie / Session
+#### HTTPS与网络安全
+###### HTTPS跟HTTP有什么样的区别
+> HTTPS = HTTP + SSL/TLS
+###### HTTPS连接建立流程
+- Client向Server发送TLS版本,支持的算法及一个随机数C
+- Server向Client发送商定的加密算法,随机数S,server证书
+- Client证书验证(验证公钥)
+- Client组装会话秘钥(随机数C+随机数S+客户端产生的预主秘钥)
+- Client通过Server的公钥对预主秘钥进行加密传输
+- Server通过私钥解密得到预主秘钥
+- 组装会话秘钥(随机数C+随机数S+解密得到预主秘钥)
+- Client发送加密握手消息
+- Server返回加密的握手消息
+
+###### HTTPS连接使用了哪些加密手段?为什么?
+- 连接建立过程中使用非对称加密,耗时但是安全
+- 后续通信过程使用对称加密
+#### TCP/UDP
+##### TCP 传输控制协议
+###### 特点
+- 面向连接 (三次握手,四次挥手)
+- 可靠传输 停止等待协议
+  - 无差错
+  - 不丢失
+  - 不重复
+  - 按序到达
+- 面向字节流
+- 流量控制 滑动窗口协议
+- 拥塞控制
+  - 慢开始 拥塞避免
+  - 快恢复 快重传
+
+###### 功能
+- 复用 分用(多端口复用)
+- 差错检测
+##### UDP 用户数据包协议 
+###### 特点
+- 无连接
+- 尽最大努力交付
+- 面向报文 既不合并也不拆分
+
+###### 功能
+- 复用 分用(多端口复用)
+- 差错检测
+#### DNS解析
+> 域名到IP地址的映射,DNS解析请求采用UDP数据报,且明文,端口号53
+> 
+- 递归查询
+   > 我去给你问一下
+- 迭代查询
+  > 我告诉你谁可能知道
+  > 
+- DNS劫持问题
+  - httpDNS
+    - 由原来的使用DNS协议向DNS服务器的53端口进行请求转换为使用HTTP协议向DNS服务器的80端口进行请求
+  - 长连接
+    - Client<--长连通道-->长连Server--内网专线-->API Server
+- DNS解析转发
+#### Session/Cookies
+> HTTP协议无状态特点的补偿
+> 
+##### Session
+> Session主要用来记录用户的状态,区分用户;状态保存在服务器端
+> 
+
+##### Cookies
+> Cookie主要用来记录用户的状态,区分用户;状态保存在客户端
+> 客户端发送的cookie是在http请求报文的Cookie首部字段中
+> 服务器设置http响应报文的Set-Cookie首部字段
+> 
+###### 怎么修改cookie?
+- 新cookie覆盖旧cookie
+- 覆盖规则:name,path,domain需要跟原cookie一致
+###### 怎么删除cookie?
+- 新cookie覆盖旧cookie
+- 覆盖规则:name,path,domain需要跟原cookie一致
+- 设置cookie的expries = 过去的某一时间点(cookie失效),或设置maxAge = 0
+
+###### 怎么保证cookie安全?
+- 对cookie进行加密处理
+- 只在https上携带cookie
+- 设置cookie为httpOnly,防止跨站脚本攻击
+
