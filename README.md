@@ -2,6 +2,12 @@
 > 面试知识点整理
 
 - [UI视图相关](#UI视图相关)
+  - [UIView跟CALayer](#UIView跟CALayer)
+  - [事件传递与视图响应链](#事件传递与视图响应链)
+  - [图像显示原理](#图像显示原理)
+  - [UI卡顿掉帧原因](#UI卡顿掉帧原因)
+  - [绘制原理&异步绘制](#绘制原理&异步绘制)
+  - [离屏渲染](#离屏渲染)
 - [内存管理](#内存管理)
   - [内存布局](#内存布局)
   - [内存管理方案](#内存管理方案)
@@ -33,7 +39,122 @@
   - [Runloop与NSTimer](#Runloop与NSTimer)
   - [Runloop与多线程](#Runloop与多线程)
 - [网络](#网络)
+## UI视图相关
 
+#### UIView跟CALayer
+- 单一原则
+- UIView为CALayer提供内容以及负责处理触摸事件,参与响应链
+- CALayer负责显示内容的Content
+#### 事件传递与视图响应链
+```
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event;
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event;
+```
+###### 事件传递示例图
+
+- 我们点击屏幕产生触摸事件，系统将这个事件加入到一个由UIApplication管理的事件队列中，UIApplication会从消息队列里取事件分发下去，首先传给UIWindow
+- 在UIWindow中就会调用hitTest:withEvent:方法去返回一个最终响应的视图
+- 在hitTest:withEvent:方法中就回去调用pointInside: withEvent:去判断当前点击的point是否在UIWindow范围内，如果是的话，就会去遍历它的子视图来查找最终响应的子视图
+- 遍历的方式是使用倒序的方式来遍历子视图，也就是说最后添加的子视图会最先遍历，在每一个视图中都回去调用它的hitTest:withEvent:方法，可以理解为是一个递归调用
+- 最终会返回一个响应视图，如果返回视图有值，那么这个视图就作为最终响应视图，结束整个事件传递；如果没有值，那么就会将UIWindow作为响应者
+---
+![avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E4%BA%8B%E4%BB%B6%E4%BC%A0%E9%80%92.png)
+
+---
+
+###### `hitTest:withEvent:`系统实现示例图
+
+- 首先会判断当前视图的hiden属性、是否可以交互以及透明度是否大于0.01，如果满足条件则进入下一步，否则返回nil
+- 调用pointInside: withEvent:方法来判断这个点是否在当前视图范围内，如果满足条件则进入下一步，否则返回nil
+
+- 然后以倒序的方式遍历它的子视图，在每个子视图中去调用hitTest:withEvent:方法，如果有一个子视图返回了一个最终的响应视图，那么就将这个视图返回给调用方；如果全部遍历完成都没有找到一个最终的响应视图，因为点击位置在当前视图范围内，就将当前视图作为最终响应视图返回
+
+---
+![avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/hitTest.png)
+
+---
+
+###### 视图响应者链
+- 与事件传递过程相反
+- 如果hitTest:withEvent:找到了第一响应者initial view，但是该响应者没有处理该事件，那么事件会沿着响应者链向上传递：第一响应者 -> 父视图 -> 视图控制器，如果传递到最顶级视图还没处理事件，那么就传递给UIWindow去处理，若window对象也不处理那么就交给UIApplication处理，如果UIApplication对象还不处理，就丢弃该事件（但是并不会引起崩溃）
+
+#### 图像显示原理
+###### 图像显示原理
+- CPU和GPU两个硬件是通过总线链接起来的
+- 在CPU中输出的结果是位图，经由总线在合适的时机上传给GPU
+- GPU拿到位图之后，会做相应位图的图层渲染，包括文理的合成之后会把结果放到帧缓冲区（Frame Buffer）当中
+- 由视频控制器根据VSync信号在指定时间之前去提取在帧缓存区当中的显示内容，最终显示到手机屏幕上
+
+###### UIView显示原理
+- 当创建一个UIView控件之后，显示部分是由 CALayer 来负责的
+- CALayer当中有一个contents属性，就是我们最终要绘制到屏幕上的位图
+- 比如说我们创建的是一个UILable，contents里面最终放置的结果就是关于hello word的文字位图
+- 然后系统会在合适的时机回调一个drawRect：方法，在此基础上可以绘制一些自定义想要绘制的内容
+- 绘制好的位图，最终会由Core Animation框架提交给GPU部分的OpenGL（ES）渲染管线进行最终的位图的渲染，包括文理的合成，然后显示到屏幕上面
+
+
+---
+![avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%9B%BE%E5%83%8F%E6%98%BE%E7%A4%BA%E5%8E%9F%E7%90%86.png)
+
+---
+#### UI卡顿掉帧原因
+
+- 如果要保持界面滑动流畅那就需要保证60FPS,那么就需要在16.7ms的时间内,CPU和GPU协同完成产生一帧的数据
+- 在这个时间内CPU和GPU没有来得及生产出一帧缓冲，那么在下一次`VSnc`信号之前, 那么这一帧会被丢弃，显示器就会保持不变，继续显示上一帧内容，这就将导致导致画面卡顿
+---
+![%E5%8D%A1%E9%A1%BF%E6%8E%89%E5%B8%A7.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%8D%A1%E9%A1%BF%E6%8E%89%E5%B8%A7.png)
+
+---
+
+###### 优化方案
+- CPU
+  - 对象创建、调整、销毁（可以放在子线程）
+  - 预排版（布局计算，文本计算）
+  - 预渲染（文本等异步绘制，图片编码等）
+- GPU
+  - 纹理渲染（避免离屏渲染、CPU异步绘制机制减轻GPU压力）
+  - 视图混合（减轻层级复杂度）
+#### 绘制原理&异步绘制
+
+###### UIView绘制流程
+- 当我们调用[UIView setNeedsDisplay]这个方法时，系统没有立即进行绘制工作，而是立刻调用CALayer的同名方法，并且会在当前layer上打上一个标记，然后会在当前runloop将要结束的时候调用[CALayer display]这个方法，然后进入真正绘制过程
+- 在[CALayer display]这个方法的内部实现中会判断这个layer的delegate是否响应displayLayer:这个方法，
+  - 不响应，进入到**系统绘制**流程中；
+  - 响应，为我们提供**异步绘制**的入口
+
+![UIView%E7%BB%98%E5%88%B6%E5%8E%9F%E7%90%86.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/UIView%E7%BB%98%E5%88%B6%E5%8E%9F%E7%90%86.png)
+
+###### 系统绘制
+- 在`CALayer`内部会先创建`backing store`(可以理解为`CGContext`)，一般在`drawRect`:方法中通过上下文堆栈当中取出栈顶的`context`,也就是上下文
+
+- 然后这个`layer`会判断是否有代理
+  - 如果没有代理，那么就会调用`[CALayer drawInCotext:]`；
+  - 如果有代理，会调用代理的`drawLayer:inContext:`方法，然后做当前视图的绘制工作（这一步是发生在系统内部的），然后在一个合适的时机给与我们`[UIView drawRect:]`方法的回调
+- 然后无论是哪个分支，最终都会由`CALayer`上传对应的`backing store`(位图)给`GPU`，然后就结束了系统默认的绘制流程
+
+![CALayer%E7%BB%98%E5%88%B6.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/CALayer%E7%BB%98%E5%88%B6.png)
+###### 异步绘制
+- 异步绘制需要系统的`[layer.delegate displayLayer:]`,这个过程需要代理负责生成对应的`bitmap`,同时设置`bitmap`为`layer.contents`属性的值
+- 假如在某一个时机调用了`[view setNeedsDisplay]`这个方法，系统会在当前`runloop`将要结束的时候调用`[CALyer display]`方法，然后如果我们这个layer的代理实现了`[view displayLayer]`这个方法
+- 然后会通过子线程的切换，我们在子线程中去做一个位图的绘制，主线程可以去做一些其他的操作
+- 在子线程中第一步先通过`CGBitmapContextCreate()`方法来创建一个位图的上下文，然后我们通过`CoreGraphic API`可以做当前UI控件的一些绘制工作，最后我们再通过`CGBitmapContextCreateImage()`这个函数来根据当前所绘制的上下文来生成一张`CGImage`图片
+
+- 最后回到主线程来提交这个位图，设置`layer`的`contents`属性，这样就完成了一个UI控件的异步绘制过程
+![%E5%BC%82%E6%AD%A5%E7%BB%98%E5%88%B6.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%BC%82%E6%AD%A5%E7%BB%98%E5%88%B6.png)
+#### 离屏渲染
+
+###### 含义
+> 离屏渲染指的是GPU在当前屏幕缓冲区以外开辟了一个缓冲区进行渲染操作
+
+###### 坏处
+- 创建了新的缓冲区
+- 上下文频繁切换
+
+###### 原因
+- 圆角(和maskToBounds一起使用)
+- 图层蒙版(mask)
+- 阴影(shadows)
+- 光栅化(shouldRasterize)
 ## 内存管理
 #### 内存布局
 - 栈(stack) -- ↓
