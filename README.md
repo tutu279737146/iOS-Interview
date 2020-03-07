@@ -1412,7 +1412,7 @@ struct __MCBlock__method_block_impl_0 {
 > 一个对象应当对其他对象有尽可能少的了解
 > 高内聚 低耦合
 #### 设计模式
-##### 责任链模式
+##### 责任链模式 [Responder](https://github.com/tutu279737146/DesignPatten/tree/master/Responder)
 ###### 场景
 ![%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F.png)
 ###### 类构成
@@ -1481,6 +1481,8 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
 ![avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E4%B8%9A%E5%8A%A1%E8%A7%A3%E8%80%A6.png)
 ###### 类构成
 ![avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%A1%A5%E6%8E%A5%E6%A8%A1%E5%BC%8F%E7%B1%BB%E6%9E%84%E6%88%90.png)
+
+[Bridge](https://github.com/tutu279737146/DesignPatten/tree/master/Bridge)
 ##### 适配器模式
 ###### 场景--一个现有类需要适应变化的问题
 > 错误: 对原有类增加实力变量或者方法;
@@ -1488,6 +1490,7 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
 ###### 类构成
 ![avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F%E7%B1%BB%E6%9E%84%E6%88%90.png)
 
+[Adapter](https://github.com/tutu279737146/DesignPatten/tree/master/Adapter)
 ##### 单例模式
 
 ```
@@ -1518,3 +1521,5 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
 
 > 行为参数化
 > 降低代码重合度
+
+[Command](https://github.com/tutu279737146/DesignPatten/tree/master/Command)
