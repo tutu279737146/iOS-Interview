@@ -39,6 +39,20 @@
   - [Runloop与NSTimer](#Runloop与NSTimer)
   - [Runloop与多线程](#Runloop与多线程)
 - [网络](#网络)
+- [设计模式](#设计模式)
+  - [设计原则](#设计原则)
+      - [单一职责原则](#单一职责原则)
+      - [依赖倒置原则](#依赖倒置原则)
+      - [开闭原则](#开闭原则)
+      - [里氏替换原则](#里氏替换原则)
+      - [接口隔离原则](#接口隔离原则)
+      - [迪米特原则](#迪米特原则)
+  - [设计模式](#设计模式)
+      - [责任链模式](#责任链模式)
+      - [桥接模式](#桥接模式)
+      - [适配器模式](#适配器模式)
+      - [单例模式](#单例模式)
+      - [命令模式](#命令模式)
 ## UI视图相关
 
 #### UIView跟CALayer
@@ -1370,4 +1384,136 @@ struct __MCBlock__method_block_impl_0 {
 - 对cookie进行加密处理
 - 只在https上携带cookie
 - 设置cookie为httpOnly,防止跨站脚本攻击
+# 设计模式
+#### 设计原则
+##### 单一职责原则
+> 一个类只负责一件事儿
+- CALayer 和 UIView
+##### 依赖倒置原则
+> 抽象不应该依赖具体实现,具体实现可以依赖于抽象
+> 
+- 数据的增删改查依赖定义抽象的接口
+- 接口数据具体实现是数据库还是plist,文件等等不关心
+##### 开闭原则
+> 对修改关闭,对扩展开放
+> 
+- 设计类的时候考虑后续迭代扩展的需求,成员变量定义尽量谨慎,避免反复修改
+- 子类继承
+##### 里氏替换原则
+> 父类可以被子类无缝替换,且原有功能不受任何影响
+> 
+- KVO机制
+##### 接口隔离原则
+> 使用多个专门的协议 而不是一个庞大臃肿的协议
+> 协议中的方法应该尽量少
+- UITableView
+##### 迪米特原则
+> 一个对象应当对其他对象有尽可能少的了解
+> 高内聚 低耦合
+#### 设计模式
+##### 责任链模式
+###### 场景
+![%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F.png)
+###### 类构成
+![%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F%E7%B1%BB%E6%9E%84%E6%88%90.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F%E7%B1%BB%E6%9E%84%E6%88%90.png)
+```
+#import <Foundation/Foundation.h>
 
+@class BusinessObject;
+typedef void(^CompletionBlock)(BOOL handled);
+typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
+
+@interface BusinessObject : NSObject
+
+// 下一个响应者(响应链构成的关键)
+@property (nonatomic, strong) BusinessObject *nextBusiness;
+// 响应者的处理方法
+- (void)handle:(ResultBlock)result;
+
+// 各个业务在该方法当中做实际业务处理
+- (void)handleBusiness:(CompletionBlock)completion;
+@end
+
+```
+```
+#import "BusinessObject.h"
+
+@implementation BusinessObject
+
+// 责任链入口方法
+- (void)handle:(ResultBlock)result
+{
+    CompletionBlock completion = ^(BOOL handled){
+        // 当前业务处理掉了，上抛结果
+        if (handled) {
+            result(self, handled);
+        }
+        else{
+            // 沿着责任链，指派给下一个业务处理
+            if (self.nextBusiness) {
+                [self.nextBusiness handle:result];
+            }
+            else{
+                // 没有业务处理, 上抛
+                result(nil, NO);
+            }
+        }
+    };
+    
+    // 当前业务进行处理
+    [self handleBusiness:completion];
+}
+
+- (void)handleBusiness:(CompletionBlock)completion
+{
+    /*
+     业务逻辑处理
+     如网络请求、本地照片查询等
+     */
+}
+```
+- 这样做就可以根据产品经理的需求,来调整业务之间的指向,来动态调整业务的顺序
+- 进一步的调整为服务端动态下发,本地对任务定义任务号及一一对应的类名,作为`key value`形式的通过后端下发,本地根据`Class`的反射来解析出具体的类,根据数组的顺序调整责任链的下一个响应者来动态调整
+- 
+##### 桥接模式
+###### 场景--业务解耦问题
+![%E4%B8%9A%E5%8A%A1%E8%A7%A3%E8%80%A6.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E4%B8%9A%E5%8A%A1%E8%A7%A3%E8%80%A6.png)
+###### 类构成
+![%E6%A1%A5%E6%8E%A5%E6%A8%A1%E5%BC%8F%E7%B1%BB%E6%9E%84%E6%88%90.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%A1%A5%E6%8E%A5%E6%A8%A1%E5%BC%8F%E7%B1%BB%E6%9E%84%E6%88%90.png)
+##### 适配器模式
+###### 场景--一个现有类需要适应变化的问题
+> 错误: 对原有类增加实力变量或者方法;
+
+###### 类构成
+![%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F%E7%B1%BB%E6%9E%84%E6%88%90.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E9%80%82%E9%85%8D%E5%99%A8%E6%A8%A1%E5%BC%8F%E7%B1%BB%E6%9E%84%E6%88%90.png)
+
+##### 单例模式
+
+```
++ (id)sharedInstance
+{
+    // 静态局部变量
+    static Mooc *instance = nil;
+    // 通过dispatch_once方式 确保instance在多线程环境下只被创建一次
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        // 创建实例
+        instance = [[super allocWithZone:NULL] init];
+    });
+    return instance;
+}
+
+// 重写方法【必不可少】
++ (id)allocWithZone:(struct _NSZone *)zone{
+    return [self sharedInstance];
+}
+
+// 重写方法【必不可少】
+- (id)copyWithZone:(nullable NSZone *)zone{
+    return self;
+}
+```
+##### 命令模式
+
+> 行为参数化
+> 降低代码重合度
