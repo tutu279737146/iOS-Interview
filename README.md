@@ -299,6 +299,7 @@
 
 
 ## Objective-C语言特性
+
 #### 分类
 ###### 分类做了什么事情
 - 声明私有方法
@@ -318,8 +319,8 @@
 ###### 分类的结构体
   ```
   struct category_t {
-    const char *name;     // 分类的名称
-    classref_t cls;       // 宿主类
+    const char *name;  // 分类的名称 如Person+Student
+    classref_t cls;    // 宿主类 如Person   
     struct method_list_t *instanceMethods; // 实例方法列表
     struct method_list_t *classMethods;    // 类方法列表
     struct protocol_list_t *protocols;     // 协议列表
@@ -336,14 +337,12 @@
   }
   ```
 ###### 分类的调用栈
-- `_objc_init`
-- `map_2_images`
-- `map_images_nolock`
-- `_read_images`
-- `_remethodizeClass`
 
-###### 源码分析
+![%E5%88%86%E7%B1%BB%E8%B0%83%E7%94%A8%E6%A0%88.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%88%86%E7%B1%BB%E8%B0%83%E7%94%A8%E6%A0%88.png)
+
 - `remethodizeClass`
+> **将传入的宿主类(假设为`Person`类)判断是否为元类对象(取决于添加的方法是实例方法还是类方法),然后取出宿主类中为完成整合的所有分类(假设有`Person+A`,`Person+B`,`Person+C`等),拼接到宿主类上**
+> 
   ```
     static void remethodizeClass (Class cls){
         category_list *cats;
@@ -364,6 +363,8 @@
     }
   ```
 - `attachCategories`   
+
+> **传入的分类的数组`cats`是按照顺序编译的,假设为`Person+A`和`Person+B`;在这个方法中会根据`cats`数组总数,然后进行倒序遍历,最先访问最后编译的分类,先访问`Person+B`,将其方法列表协议列表等添加到新的二维数组中,当调用方法时,会先查找新的二维数组中的`Person+B`的对应的方法,这也就解释了分类方法覆盖的原因.  接下来会根据传入的宿主类的名字来获取宿主类的`rw`数据,此时将刚才的包含分类的二维数组拼接到宿主类中**
   ```
     static void attachCategories (Class cls, category_list *cats, bool flush_caches){
         // 非空判断
@@ -424,6 +425,8 @@
     }
   ```
 - `attachLists`  
+
+> **根据传入的包含分类的二维数组个数(假设是A,B,C)和原来的个数(假设是X,Y),重新分配(增大)内存(5),然后将原来的元素进行内存移动,将原来的移动到尾部,将传入的二维数组拷贝到对应的位置,结果由原来的`[X,Y]`变为`[A,B,C,X,Y]`, 这就是分类会"覆盖"宿主类方法的原因**
   ```
   void attachLists (list *const *addedLists, unit32_t addedCount){
     if (addedCount == 0) return;
@@ -467,31 +470,32 @@
 
 ###### 给分类添加`成员变量`
 
-- `id objc_getAssociatedObject(id object, const void *key)`
-- `void objc_setAssociatedObject(id object, const void *key,id value,objc_AssociationPolicy policy)`
-- `void objc_removeAssociatedObjects(id object)`
+- 获取关联对象
+  - **`id objc_getAssociatedObject(id object, const void *key)`**
+- 设置关联对象 
+  - **`void objc_setAssociatedObject(id object, const void *key,id value,objc_AssociationPolicy policy)`**
+- 删除关联对象
+  - **`void objc_removeAssociatedObjects(id object)`**
 
 ###### 位置
 - 成员变量添加的位置并未添加到原宿主数组
 - 关联对象由`AssociationsManager`管理在`AssociationHashMap`中
-- 全局容器
-
+- 所有对象的关联内容都在一个相同的全局容器中
+![%E5%85%B3%E8%81%94%E5%AF%B9%E8%B1%A1.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%85%B3%E8%81%94%E5%AF%B9%E8%B1%A1.png)
 
 ###### 源码分析
 
-- 以设置关联对象方法为例`void objc_setAssociatedObject(id object, const void *key,id value,objc_AssociationPolicy policy)
-`
-- 将传入的`value`和`policy`封装为一个`ObjcAssociation`这样一个结构
-- `ObjcAssociation`再和`key`(`@selector(text)`)映射为一个`ObjcAssociationMap`,此处`key`作为了方法名
-- `ObjcAssociationMap`再跟`object`(`DISGUISE(obj)`)映射为一个全局的容器
+> 以设置关联对象方法为例 
+> - 获取`AssociationsManager`管理的全局容器`AssociationHashMap`
+> - 将传入的`value`和`policy`处理为`new_value`
+> - 根据传入的要被关联的对象`object`,对其指针地址按位取反;作为全局容器`AssociationHashMap`中的某一对象的`object_key`
+> - 根据这个`object_key`查找对应的`ObjectAssociationMap`结构的`map`,
+>   - 找的到`map`,根据传入的`key`获取`ObjectAssociationMap`中的`ObjectAssociation`对象
+>     - 如果有`ObjectAssociation`对象,将`new_value`覆盖值
+>     - 如果没有`ObjectAssociation`对象,将传入的`value`和`policy`封装成一个`ObjectAssociation`对象,封住的对象作为新创建的`ObjectAssociationMap`对应`key(传入的)`的`value`
+>   - 找不到`map`,创建一个`ObjectAssociationMap`,作为全局容器`AssociationHashMap`对应这个`object_key`的`ObjectAssociationMap_value`,然后将传入的`value`和`policy`封装成一个`ObjectAssociation`对象,封住的对象作为新创建的`ObjectAssociationMap`对应`key(传入的)`的`value`
+> 
 ```
-void objc_setAssociatedObject(id object, const void *key, id value, objc_AssociationPolicy policy){
-    objc_setAssociatedObject_non_gc(object, key, value, policy);
-}
-void objc_setAssociatedObject_non_gc(id object, const void *key, id value, objc_AssociationPolicy policy){
-    _objc_set_associative_reference(object, (void *)key, value, policy);
-}
-
 /// 关联对象的最终方法,参数是透传过来的
 /// @param object 要被关联的对象 比如要给Person的分类Person+A关联,那么object就是Person+A
 /// @param key  要关联的值的对应的key
@@ -611,6 +615,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - 读写性
 - 原子性
 - 内存管理
+
 
 ## Runtime
 
