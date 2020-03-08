@@ -686,7 +686,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   - `-(void)aMethod`-->`v@:`-->`void`+`id`+`SEL`
 
 ###### **对象,类对象,元类对象**
-- 一张图片
+-[avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%AF%B9%E8%B1%A1.png)
 
 ###### **消息传递**
 
