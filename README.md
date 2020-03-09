@@ -35,7 +35,6 @@
 - [Runtime](#Runtime)
   - [Runtime数据结构](#Runtime数据结构)
   - [对象,类对象,元类对象](#对象,类对象,元类对象)
-  - [方法缓存](#方法缓存)
   - [消息传递](#消息传递)
   - [消息转发](#消息转发)
   - [Method-Swizzing](#Method-Swizzing)
