@@ -33,6 +33,15 @@
   - [NSThread](#NSThread)
   - [多线程与锁](#多线程与锁)
 - [Runtime](#Runtime)
+  - [数据结构](#数据结构)
+  - [对象,类对象,元类对象](#对象,类对象,元类对象)
+  - [方法缓存](#方法缓存)
+  - [消息传递](#消息传递)
+  - [消息转发](#消息转发)
+  - [Method-Swizzing](#Method-Swizzing)
+  - [动态添加方法](#动态添加方法)
+  - [动态方法解析](#动态方法解析)
+   
 - [Runloop](#Runloop)
   - [概念](#概念)
   - [数据结构](#数据结构)
@@ -691,15 +700,15 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   - `const char *types`  返回值+参数1+参数2+....
   - `-(void)aMethod`-->`v@:`-->`void`+`id`+`SEL`
 
-###### **对象,类对象,元类对象**
+#### **对象,类对象,元类对象**
 ![avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%AF%B9%E8%B1%A1.png)
 
-###### **消息传递**
+#### **消息传递**
 
 - `void objc_msgSend(id self, Sel op, ...)`
 - `void objc_msgSendSuper(struct objc_super *super, Sel op, ...)`
 
-###### **缓存查找**
+#### **缓存查找**
 
 > 给定值是SEL,目标值是对应的`bucket_t`中的`IMP`
 > 
@@ -714,20 +723,20 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 ###### **父类中查找**
 - curClass ----> superClass
 
-###### **消息转发**
+#### **消息转发**
 - `resolveInstanceMethod`
 - `forwardingTargetForSelector`
 - `methodSignatureForSelector`和`forwardInvocation`
 
-###### **Method-Swizzling**
+#### **Method-Swizzling**
 - `load`
-###### **动态添加方法**
+#### **动态添加方法**
 
 - `class_addMethod(Class cls, SEL name, IMP imp,
     const char *types)`
 - `performSelector: `
 
-###### **动态方法解析**
+#### **动态方法解析**
 
 - `@dynamic`
 - 动态运行时语言将函数决议推迟到运行时
