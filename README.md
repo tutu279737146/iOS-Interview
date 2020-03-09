@@ -708,39 +708,54 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - `void objc_msgSend(id self, Sel op, ...)`
 - `void objc_msgSendSuper(struct objc_super *super, Sel op, ...)`
 
+![消息传递](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E6%B5%81%E7%A8%8B.png)
+
 ###### **缓存查找**
 
-> 给定值是SEL,目标值是对应的`bucket_t`中的`IMP`
-> 
-- cache_key_t ----> f(key)---->bucket_t
-- f(key) = key &mask
+> 可以理解为: 给定值是SEL,目标值是对应的`bucket_t`中的`IMP`
+- 使用的是哈希查找
+- 根据给定的`SEL`通过一个函数来映射出对应的`bucket_t`在数组当中的位置
+- `f(key)`就是`SEL`跟`mask`做`&`操作,而`mask`也是`cache_t`的一个成员变量
+![缓存查找](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E7%BC%93%E5%AD%98%E6%9F%A5%E6%89%BE.png)
 
 ###### **当前类中查找**
 
-- 排序好的,采用二分查找法查找相应的执行函数
-- 未排序的,采用一般遍历法查找
+- 对于`已排序好的`列表,采用`二分查找法`查找方法相应的执行函数
+- 对于`未排序的`列表,采用`一般遍历法`查找方法相应的执行函数
 
 ###### **父类中查找**
-- curClass ----> superClass
+
+- 如图
+
+![父类查找](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E7%88%B6%E7%B1%BB%E6%9F%A5%E6%89%BE.png)
 
 #### **消息转发**
-- `resolveInstanceMethod`
-- `forwardingTargetForSelector`
-- `methodSignatureForSelector`和`forwardInvocation`
+
+
+![消息转发](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%B6%88%E6%81%AF%E8%BD%AC%E5%8F%91%E6%B5%81%E7%A8%8B.png)
+- `+ (BOOL)resolveInstanceMethod:(SEL)sel`
+  - 告诉系统要不要解决当前传入的方法的实现
+- `- (id)forwardingTargetForSelector:(SEL)aSelector`
+  - 告诉系统这次的方法调用应该由哪个对象来处理
+- `- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector`和`forwardInvocation`
+  - 是否返回方法签名,进而处理
 
 #### **Method-Swizzling**
-- `load`
+
+![交换方法](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%96%B9%E6%B3%95%E4%BA%A4%E6%8D%A2.png)
 #### **动态添加方法**
 
-- `class_addMethod(Class cls, SEL name, IMP imp,
+- 添加时机是在`resolveInstanceMethod`方法中添加
+- 添加方法是 `class_addMethod(Class cls, SEL name, IMP imp,
     const char *types)`
 - `performSelector: `
 
 #### **动态方法解析**
 
 - `@dynamic`
-- 动态运行时语言将函数决议推迟到运行时
-- 编译时语言在编译器进行函数决议
+  - 动态运行时语言将函数决议推迟到运行时
+  - 编译时语言在编译器进行函数决议
+
 
 ## Block
 
