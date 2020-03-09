@@ -273,21 +273,26 @@
 
 
 > 问:当一个weak释放时,怎么置为nil?
+
 > 答:当一个对象被`dealloc`之后,在`dealloc`内部实现当中会调用`weak_clear_no_lock()`,在函数实现当中会根据当前对象的指针查找所对应的的弱引用表,把当前对象所对应的弱引用拿出来是一个数组,遍历置为nil
 #### 自动释放池
 
 - 是以栈为接点通过双向链表的形式组合而成的
 - 是和线程一一对应的
 > 问: `AutoreleasePool`实现原理
+
 > 在当次runloop将要结束的时候调用`AutoreleasePoolPage::pop()`
 
 > 问: `AutoreleasePool`嵌套使用
+
 > 多次嵌套就是多次插入哨兵对象
 
 
 > 问: 什么情况下使用
+
 > 在for循环中alloc图片等数据消耗较大的场景手动插入autoreleasepool
 > 
+
 - `@autoreleasepool{}` 编译后转换为
   -  `void *ctx = objc_autoreleasePoolPush()`
   -  `{}`
