@@ -670,9 +670,9 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - `Class` `superClass`
 - `cache_t` `cache` 方法缓存
   - 特点:
-    - 用于快速查找方法执行函数
-    - 可增量扩展的哈希表结构
-    - 是局部性原理的最佳应用
+    - 用于**快速**查找方法执行函数
+    - 可**增量扩展**的**哈希表**结构
+    - 是**局部性原理**的最佳应用
   - 结构
     - `bucket_t`
       - `key`---->`selector`
@@ -708,7 +708,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - `void objc_msgSend(id self, Sel op, ...)`
 - `void objc_msgSendSuper(struct objc_super *super, Sel op, ...)`
 
-#### **缓存查找**
+###### **缓存查找**
 
 > 给定值是SEL,目标值是对应的`bucket_t`中的`IMP`
 > 
