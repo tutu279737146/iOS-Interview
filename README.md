@@ -1221,18 +1221,59 @@ struct __MCBlock__method_block_impl_0 {
 
 #### Runloop数据结构
 > NSRunloop是对CFRunloop的封装,提供了面向对象的API
+> 
+![Runloop.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/Runloop.png)
 ##### CFRunloop
-- pthread (runloop跟线程是一一对应关系)
-- currentMode (CFRunLoopMode)
-- modes (NSMutableSet<CFRunLoopMode *>)
-- commonModes (NSMutableSet<NSString *>)
-- commonModeItems (NSMutableSet<observer,timer,source *>)
+
+```
+struct __CFRunLoop {
+    CFRuntimeBase _base;
+    pthread_mutex_t _lock;
+    __CFPort _wakeUpPort;
+    Boolean _unused;
+    volatile _per_run_data *_perRunData;          
+    pthread_t _pthread;
+    uint32_t _winthread;
+    CFMutableSetRef _commonModes;
+    CFMutableSetRef _commonModeItems;
+    CFRunLoopModeRef _currentMode;
+    CFMutableSetRef _modes;
+    struct _block_item *_blocks_head;
+    struct _block_item *_blocks_tail;
+    CFTypeRef _counterpart;
+};
+```
+- **pthread:** 代表线程,runloop跟线程是一一对应关系
+- **currentMode:** CFRunLoopMode数据结构
+- **modes**: 一个包含CFRunLoopMode类型的集合   (NSMutableSet<CFRunLoopMode *>)
+- **commonModes:** 一个包含NSString类型的集合    (NSMutableSet<NSString *>)
+- **commonModeItems:** 包含多个元素的集合 (NSMutableSet<observer,timer,source *>)
 ##### CFRunloopMode
-- name (NSDefaultRunloopMode)
-- sources0 (NSMutableSet)
-- sources1 (NSMutableSet)
-- observers (NSMutableArray)
-- timers (NSMutableArray)
+
+```
+struct __CFRunLoopMode {
+    CFRuntimeBase _base;
+    pthread_mutex_t _lock;
+    CFStringRef _name;
+    Boolean _stopped;
+    char _padding[3];
+    CFMutableSetRef _sources0;
+    CFMutableSetRef _sources1;
+    CFMutableArrayRef _observers;
+    CFMutableArrayRef _timers;
+    CFMutableDictionaryRef _portToV1SourceMap;
+    __CFPortSet _portSet;
+    CFIndex _observerMask;
+};
+
+```
+- **name:** 模式的名称
+  - 如NSDefaultRunLoopMode,通过这样一个名称来切换对应的模式;
+  - commonModes里面都是名称字符串，通过这些名称来支持多种模式(NSDefaultRunloopMode)
+- **sources0:** 集合类型的数据结构(NSMutableSet)
+- **sources1:** 集合类型的数据结构(NSMutableSet)
+- **observers:** 数组类型的数据结构(NSMutableArray)
+- **timers:** 数组类型的数据结构(NSMutableArray)
 ##### Source/Timer/Observer
 ###### CFRunLoopSource
 - source0
@@ -1257,6 +1298,8 @@ struct __MCBlock__method_block_impl_0 {
 - 是同步Source/Timer/Observer到多个Mode中的一种技术方案
 ##### 事件循环的实现机制
 ###### void CFRunLoopRun()
+
+![runloop事件循环](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/runloop%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF%E6%9C%BA%E5%88%B6.png)
 - 1.即将进入Runloop,发通知
 - 2.将要处理Timer/Source0事件, 发通知
 - 3.处理source0事件
@@ -1269,6 +1312,13 @@ struct __MCBlock__method_block_impl_0 {
 - 7.线程刚被唤醒,发通知
 - 8.处理唤醒时收到的消息,处理完后回到2
 - 9.即将推出RunLoop,发通知
+
+
+##### Runloop的核心
+
+![runloop核心](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/runloop%E7%9A%84%E6%A0%B8%E5%BF%83.png)
+- `main()`函数经过一系列调用会调用为系统的`mach_msg()`函数,这样就发生了系统调用
+- 经过系统调,当前线程就把控制权交给了内核态,`mach_msg()`函数在一定条件下会返回给调用方,这个触发返回的逻辑就是唤醒线程的逻辑(source1,手动唤醒等)
 #### Runloop与NSTimer
 ###### void CFRunLoopAddTimer(runLoop,timer,commonMode)
 
@@ -1280,6 +1330,8 @@ struct __MCBlock__method_block_impl_0 {
 - 为当前线程开启一个RunLoop
 - 向该RunLoop中添加一个Port/Source等维护RunLoop的事件循环
 - 启动该RunLoop
+
+
 
 # 网络
 
