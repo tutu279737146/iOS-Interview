@@ -1353,32 +1353,70 @@ struct __CFRunLoopMode {
 
 
 
-# 网络
+## 网络
 
 #### HTTP协议
 > 超文本传输协议
 > 
 ##### 请求/响应报文
-- 方式
-  - GET
-  - POST
-  - HEAD
-  - PUT
-  - DELETE
-  - OPTIONS
 
-- GET POST区别
-  - GET 获取资源 
-    - 安全的 不应该引起server端任何状态变化
-    - 幂等的 同一个请求方法执行多次跟执行一次的效果完全相同
-    - 可缓存的 请求是否可以被缓存
+###### 请求报文
+![请求报文](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E8%AF%B7%E6%B1%82%E6%8A%A5%E6%96%87.png)
+- 请求行
+  - 方法: `GET` `POST`等
+  - URL:请求地址
+  - 协议版本:HTTP1.1
+- 请求头
+  - 头部字段以`key:value`形式组合在一起,多个首部字段构成首部字段区域
+- 实体主体
+  - 一般`GET`请求没有实体主体,`POST`请求有请求主体
 
-  - POST 处理资源 
-      - 不安全的 
-      - 不幂等的 
-      - 不可缓存的
-#### 链接建立流程
+###### 响应报文
 
+![响应报文](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%93%8D%E5%BA%94%E6%8A%A5%E6%96%87.png)
+- 响应行
+  - 版本
+  - 状态码:`100` `200` `303` `404` `500`
+  - 短语:状态码的描述
+- 请求头
+  - 头部字段以`key:value`形式组合在一起,多个首部字段构成首部字段区域
+- 实体主体
+
+###### 请求方式
+
+- GET
+- POST
+- HEAD
+- PUT
+- DELETE
+- OPTIONS
+
+
+###### GET POST区别
+**一般的回答是:**
+- `GET`请求参数是以`?`拼接到`URL`后面的,而`POST`请求的参数一般是放在`Body`里面的
+- `GET`的参数长度限制是`2048`个字符,而`POST`请求一般没有限制
+- `GET`请求不太安全,`POST`请求是比较安全的
+
+**但从语义的角度来比较的话,应该是这样的:**
+  - GET: 获取资源 `安全的` `幂等的` `可缓存的`
+  - POST: 处理资源 `不安全的` `不幂等的` `不可缓存的`
+
+
+**语义对应的解释:**
+- 安全性:
+  - 不应该引起`server`端任何状态变化;如`GET`请求多次去`Server`端获取数据,不会引起`Server`端的状态变化
+  - 安全请求包括: `GET`,`HEAD`,`OPTIONS`
+
+- 幂等性:
+  - 同一个请求方法执行多次跟执行一次的效果完全相同;如`GET`请求多次去`Server`端获取数据,执行的效果是完全相同的;此处并不是指的是获取的数据完全相同(如多次`GET`请求中间有`POST`数据有可能发生改变),指的是`GET`请求这个方法 `执行的效果`
+  - 幂等性请求包括: `GET`,`PUT`,`DELETE`
+- 可缓存性:
+  - 请求是否可以缓存;当我们在发起一个`HTTP`请求的过程中,传递的链路我们是不确定的,虽然说在一条`TCP`链接上,但是网络路径在接触或者通过网关包括一些代理到底`Server`端,在这上面会涉及到方方面面内容,往往对于一些代理服务器会有缓存,而这种缓存性是官方的一种规范,可以遵守也可以不遵守,大多数情况下会遵守,所以在`GET`请求会有相对应的缓存
+  - 可缓存的请求有`GET`,`HEAD`
+##### 链接建立流程
+
+![HTTP建立流程](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/HTTP%E9%93%BE%E6%8E%A5%E5%BB%BA%E7%AB%8B%E6%B5%81%E7%A8%8B.png)
 ###### 三次握手
 - 为什么是3次握手?(超时)
   - Client第一次发送syn1,超时了,Server没收到
@@ -1392,22 +1430,38 @@ struct __CFRunLoopMode {
 
 ##### HTTP特点
 ###### 无连接
-- HTTP的持久链接
-  - Connection: keep-alive
-  - time:20
-  - max:10
-- HTTP的持久链接好处
-  - 提升效率,减少建立连接的数量 
-- 怎么判断一个请求是否结束
-  > 在一个tcp连接里面发送了多次http请求,怎么区分前一个请求结束了,后一个请求开始
-  - Content-length: 1024(请求报文跟响应报文都有头部字段,根据服务端响应的数据大小结束数据字节数是否到达1024)
-  - chunked,最后会有一个空的chunked
+
+- 含义: HTTP链接有建立链接和释放链接的一个过程
+- 补偿: HTTP的持久链接
+![持久链接](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%8C%81%E4%B9%85%E9%93%BE%E6%8E%A5.png)
+  - 涉及到的请求头部字段
+    - Connection: keep-alive (客户端期许持久链接)
+    - time:20 (持久链接持续时间)
+    - max:10 (当前链接最大的http请求和响应对)
+  - HTTP的持久链接好处
+    - 提升网络请求效率,减少`TCP`连接建立的数量 
+  - 怎么判断一个请求是否结束
+    > 在一个tcp连接里面发送了多次http请求,怎么区分前一个请求结束了,后一个请求开始
+    > 
+    - Content-length: 1024 (请求报文跟响应报文都有头部字段,根据服务端响应的数据大小,客户端根据接收数据字节数是否到达1024)
+    - chunked: 通过post请求时,server端返回给客户端的数据是需要通过多次响应来返回给客户端这些数据,可以根据http响应报文中头部字段chunked来判断http请求是否结束;当有多个块儿通过http的TCP链接传输给客户端时,每个报文都会带有chunked字段,最后一个是空的chunked
+
+
 ###### 无状态
-- Cookie / Session
+- 含义:server端对事务处理没有记忆能力
+- 补偿: Cookie / Session
+
+
 #### HTTPS与网络安全
+
 ###### HTTPS跟HTTP有什么样的区别
+
 > HTTPS = HTTP + SSL/TLS
+> 
+
 ###### HTTPS连接建立流程
+
+![HTTPS链接流程](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/HTTPS%E9%93%BE%E6%8E%A5%E6%B5%81%E7%A8%8B.png)
 - Client向Server发送TLS版本,支持的算法及一个随机数C
 - Server向Client发送商定的加密算法,随机数S,server证书
 - Client证书验证(验证公钥)
@@ -1421,33 +1475,58 @@ struct __CFRunLoopMode {
 ###### HTTPS连接使用了哪些加密手段?为什么?
 - 连接建立过程中使用非对称加密,耗时但是安全
 - 后续通信过程使用对称加密
-#### TCP/UDP
+#### TCP/UDP 传输层协议
 ##### TCP 传输控制协议
 ###### 特点
 - 面向连接 (三次握手,四次挥手)
-- 可靠传输 停止等待协议
-  - 无差错
-  - 不丢失
-  - 不重复
-  - 按序到达
+- 可靠传输
+  - 特点
+    - 无差错
+    - 不丢失
+    - 不重复
+    - 按序到达 (滑动窗口协议)
+  - 实现:停止等待协议
+    - 无差错情况
+    - 超时重传
+    - 确认丢失
+    - 确认迟到
+  ![可靠传输](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%8F%AF%E9%9D%A0%E4%BC%A0%E8%BE%93.png)
+
 - 面向字节流
-- 流量控制 滑动窗口协议
+  - 不管发送方提交给TCP的缓冲是多大的数据,对TCP本身来说它会根据一个实际的情况来进行划分一次性传递的字节数
+
+  ![面向字节流](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E9%9D%A2%E5%90%91%E5%AD%97%E8%8A%82%E6%B5%81.png)
+- 流量控制 
+  - 滑动窗口协议
+  ![滑动窗口](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3.png)
 - 拥塞控制
   - 慢开始 拥塞避免
   - 快恢复 快重传
+  
+  ![慢开始](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%85%A2%E5%BC%80%E5%A7%8B.png)
 
 ###### 功能
 - 复用 分用(多端口复用)
 - 差错检测
+
+
 ##### UDP 用户数据包协议 
 ###### 特点
 - 无连接
 - 尽最大努力交付
+  - 不保证可靠传输
 - 面向报文 既不合并也不拆分
+  
+  ![面向报文](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E9%9D%A2%E5%90%91%E6%8A%A5%E6%96%87.png)
 
 ###### 功能
+
 - 复用 分用(多端口复用)
+
+  ![复用](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%A4%8D%E7%94%A8%20%E5%88%86%E7%94%A8.png)
 - 差错检测
+
+  ![差错检测](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%B7%AE%E9%94%99%E6%A3%80%E6%B5%8B.png)
 #### DNS解析
 > 域名到IP地址的映射,DNS解析请求采用UDP数据报,且明文,端口号53
 > 
@@ -1458,10 +1537,15 @@ struct __CFRunLoopMode {
   > 
 - DNS劫持问题
   - httpDNS
+    - IP直连 `http://119.29.29.29?dn=www.xxx.com&ip=172.12.134.108`
     - 由原来的使用DNS协议向DNS服务器的53端口进行请求转换为使用HTTP协议向DNS服务器的80端口进行请求
   - 长连接
-    - Client<--长连通道-->长连Server--内网专线-->API Server
+   ![长连接](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E9%95%BF%E8%BF%9E%E6%8E%A5.png)
 - DNS解析转发
+  - 例如移动网络下向移动DNS解析
+  - 移动DNS解析为了节省资源转给电信DNS
+  - 电信DNS通过权威DNS解析对应电信对应的服务器返回
+  - 这样的话相当于移动网络访问电信服务器,跨网访问,请求缓慢
 #### Session/Cookies
 > HTTP协议无状态特点的补偿
 > 
@@ -1486,7 +1570,10 @@ struct __CFRunLoopMode {
 - 对cookie进行加密处理
 - 只在https上携带cookie
 - 设置cookie为httpOnly,防止跨站脚本攻击
-# 设计模式
+
+
+
+## 设计模式
 #### 设计原则
 ##### 单一职责原则
 > 一个类只负责一件事儿
