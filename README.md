@@ -23,6 +23,7 @@
   - [KVC](#KVC)
 - [Block](#Block)
   - [Block介绍](#Block介绍)
+  - [Block判空操作](#Block判空操作)
   - [截获变量](#截获变量)
   - [__block修饰符](#__block修饰符)
   - [Block内存管理](#Block内存管理)
@@ -822,6 +823,21 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
       return num *multiplier;
     }
     ```
+    
+##### Block判空操作
+> `Block`执行时需判空,否则`Crash`
+> 
+- 定义一个`Block`时,底层会将其转为`_block_impl`的结构体指针,而其成员结构上面我们也可以看到;当`block()`调用时,底层为函数的地址调用`block->FuncPtr`,去访问`FuncPtr`地址,而由于这个地址是无效的,所以会抛出异常
+
+> 异常的`EXC_BADACCESS`,地址`address`是多少呢?
+> 
+- `EXC_BADACCESS(code=1,address=0x10)`,是因为这个`_block_impl`数据结构为:
+  - 占8个字节的`isa`指针
+  - 占4个字节的`Flags`int
+  - 占4个字节的`Reserved`int
+
+偏移量刚好为16所对应的`block`调用`FuncPtr`
+
 #### 截获变量
 - 局部变量(基本数据类型) 
   - 截获其值
