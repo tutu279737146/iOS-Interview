@@ -202,7 +202,9 @@
 
 #### 内存管理方案
 
-- 不同场景不同管理方案
+> 不同场景不同管理方案
+
+
 - TaggedPoingter 小对象如`NSNumber`
 - NONPOINTER_ISA
   - arm64架构
