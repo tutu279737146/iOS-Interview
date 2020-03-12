@@ -189,6 +189,8 @@
 - 光栅化(shouldRasterize)
 ## 内存管理
 #### 内存布局
+
+![内存布局](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4.png)
 - 栈(stack) -- ↓
   - 方法调用
 - 堆(heap) -- ↑
@@ -205,10 +207,12 @@
 > 不同场景不同管理方案
 
 
-- TaggedPoingter 小对象如`NSNumber`
+- TaggedPoingter 
+  - 小对象如`NSNumber`
 - NONPOINTER_ISA
-  - arm64架构
-  - 0-64  1是0否
+
+  ![NONPOINTER_ISA](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/NONPOINTER_ISA.png)
+  - arm64架构下是一个64bit
     - 0 :indexed 0是纯`isa`指针
     - 1 :has_assoc 是否关联对象 
     - 2 :has_cxx_dtor 是否使用过c++
