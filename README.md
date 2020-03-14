@@ -191,29 +191,21 @@
 - 图层蒙版(mask)
 - 阴影(shadows)
 - 光栅化(shouldRasterize)
-## 内存管理
-#### 内存布局
 
-![内存布局](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4.png)
-- 栈(stack) -- ↓
-  - 方法调用
-- 堆(heap) -- ↑
-  - 通过alloc分配的对象
-- 未初始化数据(.bss)
-  - 未初始化的全局变量 未初始化静态变量
-- 已初始化数据(.data)
-  - 已初始化的全局变量
-- 代码段(.text)
-  - 程序代码
 
 #### 内存管理方案
 
 > 不同场景不同管理方案
 
+- **Tagged Poingter** 
+  - 64bit开始引入`Tagged Poingter `优化小对象的存储:如`NSNumber`,`NSDate`,`NSString`
+  - 在没有使用Tagged Pointer之前， NSNumber等对象需要动态分配内存、维护引用计数等，NSNumber指针存储的是堆中NSNumber对象的地址值
+  - 使用Tagged Pointer之后，NSNumber指针里面存储的数据变成了：Tag + Data，也就是将数据直接存储在了指针中
+  - 当指针不够存储数据时，才会使用动态分配内存的方式来存储数据
+  - objc_msgSend能识别Tagged Pointer，比如NSNumber的intValue方法，直接从指针提取数据，节省了以前的调用开销
 
-- TaggedPoingter 
-  - 小对象如`NSNumber`
-- NONPOINTER_ISA
+
+- **NONPOINTER_ISA**
 
   ![NONPOINTER_ISA](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/NONPOINTER_ISA.png)
   - arm64架构下是一个64bit
@@ -226,62 +218,68 @@
     - 43 :deallocating 是否在进行dealloc操作
     - 44 :has_sidetable_rc 当前存储引用计数是否到达上限
     - 45-63 extra_rc 额外引用计数
-- 散列表
+- **散列表**
+
+> 在64bit中，引用计数可以直接存储在优化过的isa指针中，也可能存储在SideTable类中
+> 
+
+  ![SideTables().png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/SideTables().png)
+
+  > 为什么不是一个`SideTable`,而是多个组成的`SideTables`?
+  > 
+
+  > 如果是一张大表的话,如果要操作某个对象的引用计数值进行修改,由于对象可能是在不同对象中创建的,所以进行操作时需要加锁操作才能保证数据安全,存在效率问题
+  > 
+  
+    > 解决办法 
+  > 
+
+  > 分离锁计数方案,分拆成8个,假如对象A B分别在不同表的话,可以并发进行操作加锁处理
+  > 
+
+  > 怎么实现快速分流?通过对象的指针,如何快速定位到其属于哪张`SideTable`表?
+  > 
+
+  > `SideTables`本质是一张`Hash`表,里面有64张具体的`SideTable`,存储不同对象的引用计数表和弱引用表,通过对象的指针通过`hash`函数可以得到具体在`SideTables`中具体位置;`f(ptr) = (uintptr_t) % array.count`
+  > 
+
   - `SideTables()`
     - `spinlock_t` 自旋锁
       - `spinlock_t` 是一种忙等的锁
       - 适用于轻量访问
+
     - `RefcountMap`引用计数表
       - `hash`表
-      - `ptr` ----> `Disguise(objc_object)` ----> `size_t`
-      - `size_t`
-        - 0: `weakly_referenced`
-        - 1: `deallocating`
-        - 2-63: 实际的引用计数值 向右偏移俩位来计算
+      - `size_t`代表对象的引用计数值,需向右偏移俩位来计算
+      ![RefcountMap.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/RefcountMap.png)
     - `weak_table_t`弱引用表
       - `hash`表
-      - `对象指针(key)` ----> `Hash函数` ----> `weak_entry_t(value)`
+      ![%E5%BC%B1%E5%BC%95%E7%94%A8%E8%A1%A8.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%BC%B1%E5%BC%95%E7%94%A8%E8%A1%A8.png)
 
 #### ARC&MRC
 
 - MRC
-  - `alloc`
+  - **`alloc`**
     - 经过一系列的调用,最终调用了C函数的`calloc`
-  - `retain`
-    - `SideTable & table = SideTables()[this]` //通过当前对象的指针,通过hash函数计算在SideTables找到对应的sizeTable
-    - `size_t &refcntStorage = table.refcnts[this]`
-    - `refcntStorage += SIDE_TABLE_RC_ONE`
-  - `release`
-    - `SideTable & table = SideTables()[this]` //通过当前对象的指针,通过hash函数计算在SideTables找到对应的sizeTable
-    - `RefcountMap::iterator it = table.fefcnts.find(this)`
-    - `refcntStorage -= SIDE_TABLE_RC_ONE`
-  - `retainCount`
-    - `SideTable & table = SideTables()[this]` 
-    - `sizt_t refcnt_result = 1`
-    - `RefcountMap::iterator it = table.fefcnts.find(this)`
-    - `refcnt_result += it->secont >> SIDE_TABLE_RC_SHIFT`
-  - `autoRelease`
-  - `dealloc`
-    - `_objc_rootDealloc()`
-    - `rootDealloc()` 作如下判断
-      - `nonpointer_isa`
-      - `weakly_referenced`
-      - `has_assoc`
-      - `has_cxx_dtor`
-      - `has_sidetable_rc`
-    - 结果为YES 调用`C函数free()` 
-    - 结果为NO 调用`object_dispose()`
-      - `objc_destructInstance()` 作如下判断
-        - `hasCxxDtor`
-        - 结果为YES 调用 `objc_cxxDestruct()`
-        - 结果为NO 调用 `hasAssociatedObjects`
-          - 结果为YES, `_objc_remove_associations()`
-          - 结果为NO, `clearDeallocating()`
-            - `sidetable_clearDeallocating()`
-            - `weak_clear_no_lock()` 将指向该对象的弱引用指针置为nil
-            - `table.refcnts.erase()` 引用技术表清除引用计数
-      - `C函数free()`
+    - 此时并没有设置引用计数为1
+  - **`retain`**
+    - **`SideTable &table = SideTables()[this]`** //通过当前对象的指针,通过`hash`函数计算在`SideTables`找到对应的`sizeTable`
+    - **`size_t &refcntStorage = table.refcnts[this]`**
+    - **`refcntStorage += SIDE_TABLE_RC_ONE`**  // 此处加1,并不是实际的1,而是一个偏移量,实际是4
+  - **`release`**
+    - **`SideTable &table = SideTables()[this]`** //通过当前对象的指针,通过hash函数计算在SideTables找到对应的sizeTable
+    - **`RefcountMap::iterator it = table.fefcnts.find(this)`**
+    - **`refcntStorage -= SIDE_TABLE_RC_ONE`**
+  - **`retainCount`****
+    - **`SideTable & t**able = SideTables()[this]` **
+    - **`sizt_t refcnt_result = 1`****
+    - **`RefcountMap::iterator it = table.fefcnts.find(this)`**
+    - **`refcnt_result += it->secont >> SIDE_TABLE_RC_SHIFT`
+  - **`dealloc`**
+
+    ![dealloc.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/dealloc.png)
 - ARC
+  - `ARC`编译器在对应的位置为我们插入`retain`,`release`操作;
   - `ARC`是`LLVM`和`Runtime`协作的结果
   - 禁止手动调用`retain`,`release`,`retainCount`,`dealloc`
   - `weak`,`strong`
@@ -289,8 +287,11 @@
 #### 弱引用
 
 > `id __weak obj1 = obj;` -- > `objc_initWeak(&obj1,obj)`
+> 
+![%E6%B7%BB%E5%8A%A0weak%E5%8F%98%E9%87%8F.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%B7%BB%E5%8A%A0weak%E5%8F%98%E9%87%8F.png)
 >  一个被声明为__weak对象指针,会经过如下方法 添加
 - `objc_initWeak()`
+  - 传入了弱引用变量的地址`&obj1`和被修饰的弱引用变量`obj`
 - `storeWeak()`
 - `weak_register_no_lock()`
 
@@ -304,7 +305,7 @@
 > 答:当一个对象被`dealloc`之后,在`dealloc`内部实现当中会调用`weak_clear_no_lock()`,在函数实现当中会根据当前对象的指针查找所对应的的弱引用表,把当前对象所对应的弱引用拿出来是一个数组,遍历置为nil
 #### 自动释放池
 
-- 是以栈为接点通过双向链表的形式组合而成的
+- 是以栈为结点通过双向链表的形式组合而成的
 - 是和线程一一对应的
 > 问: `AutoreleasePool`实现原理
 
@@ -321,15 +322,36 @@
 > 
 
 - `@autoreleasepool{}` 编译后转换为
-  -  `void *ctx = objc_autoreleasePoolPush()`
-  -  `{}`
-  -  `objc_autoreleasePoolPop(ctx)`
 
-- `AutoreleasePoolPage`
-  - `id *next`
-  - `AutoreleasePoolPage *const parent`
-  - `AutoreleasePoolPage *child`
-  - `pthread_t const thread`
+  ```
+   void *ctx = objc_autoreleasePoolPush();
+   { 代码 };
+   objc_autoreleasePoolPop(ctx);
+  ```
+  - `objc_autoreleasePoolPush()`
+    - 内部会调用`c++`函数`AutoreleasePoolPage::push(void)`
+  - `objc_autoreleasePoolPop(ctx)`
+    - 内部会调用`c++`函数`AutoreleasePoolPage::pop(ctx)`
+    - 一次pop相当于一次批量的pop操作
+- `AutoreleasePoolPage`的数据结构
+
+  ```
+  class AutoreleasePoolPage{
+    id *next;
+    AutoreleasePoolPage *const parent;
+    AutoreleasePoolPage *child;
+    pthread_t const thread;
+  }
+  ```
+  - `id *next` 用来作为游标指向栈顶添加新的`autoreleasepool`对象的下一个位置
+  - `parent`和`child`双向链表
+  - `thread` 和线程一一相关
+  - 每个AutoreleasePoolPage对象占用4096字节内存，除了用来存放它内部的成员变量，剩下的空间用来存放autorelease对象的地址
+  - 当当前的`AutoreleasePoolPage`页再加入一个`autoreleasepool`对象就要满时(next指针马上指向栈顶时),新建立一个下一页的`page`对象,与当前页链表链接完成后,新`page`页的`next`指针会被初始化在栈底,然后继续向栈顶添加对象
+  - 每当进行`push`操作,runtime会向当前的`page`add一个哨兵对象nil,objc_autoreleasePoolPush的返回值正是这个哨兵对象的地址，被objc_autoreleasePoolPop(哨兵对象)作为入参:
+  - 根据传入的哨兵对象地址找到哨兵对象所处的page
+  - 在当前page中，将晚于哨兵对象插入的所有autorelease对象都发送一次- release消息，并向回移动next指针到正确位置
+
 #### 循环引用
 
 - 自循环引用
@@ -344,6 +366,8 @@
   - 修饰对象不会增加引用计数,避免循环引用
   - 会产生悬垂指针
 - NSTimer的循环引用问题
+
+
 
 
 ## Objective-C语言特性
