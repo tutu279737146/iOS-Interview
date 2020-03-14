@@ -192,6 +192,20 @@
 - 阴影(shadows)
 - 光栅化(shouldRasterize)
 
+## 内存管理
+#### 内存布局
+
+![内存布局](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4.png)
+- 栈(stack) -- ↓
+  - 方法调用
+- 堆(heap) -- ↑
+  - 通过alloc分配的对象
+- 未初始化数据(.bss)
+  - 未初始化的全局变量 未初始化静态变量
+- 已初始化数据(.data)
+  - 已初始化的全局变量
+- 代码段(.text)
+  - 程序代码
 
 #### 内存管理方案
 
