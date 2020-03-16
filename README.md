@@ -1913,32 +1913,34 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
 
 - 图像，Graphics
 
-尽可能降低CPU、GPU功耗
+###### 优化方案
 
-少用定时器
+- 尽可能降低CPU、GPU功耗
 
-优化I/O操作
-尽量不要频繁写入小数据，最好批量一次性写入
-读写大量重要数据时，考虑用dispatch_io，其提供了基于GCD的异步操作文件I/O的API。用dispatch_io系统会优化磁盘访问
-数据量比较大的，建议使用数据库（比如SQLite、CoreData）
+- 少用定时器
 
-网络优化
-减少、压缩网络数据
-如果多次请求的结果是相同的，尽量使用缓存
-使用断点续传，否则网络不稳定时可能多次传输相同的内容
-网络不可用时，不要尝试执行网络请求
-让用户可以取消长时间运行或者速度很慢的网络操作，设置合适的超时时间
-批量传输，比如，下载视频流时，不要传输很小的数据包，直接下载整个文件或者一大块一大块地下载。如果下载广告，一次性多下载一些，然后再慢慢展示。如果下载电子邮件，一次下载多封，不要一封一封地下载
+- 优化I/O操作
+  - 尽量不要频繁写入小数据，最好批量一次性写入
+  - 读写大量重要数据时，考虑用dispatch_io，其提供了基于GCD的异步操作文件I/O的API。用dispatch_io系统会优化磁盘访问
+  - 数据量比较大的，建议使用数据库（比如SQLite、CoreData）
 
-定位优化
-如果只是需要快速确定用户位置，最好用CLLocationManager的requestLocation方法。定位完成后，会自动让定位硬件断电
-如果不是导航应用，尽量不要实时更新位置，定位完毕就关掉定位服务
-尽量降低定位精度，比如尽量不要使用精度最高的kCLLocationAccuracyBest
-需要后台定位时，尽量设置pausesLocationUpdatesAutomatically为YES，如果用户不太可能移动的时候系统会自动暂停位置更新
-尽量不要使用startMonitoringSignificantLocationChanges，优先考虑startMonitoringForRegion:
+- 网络优化
+  - 减少、压缩网络数据
+  - 如果多次请求的结果是相同的，尽量使用缓存
+  - 使用断点续传，否则网络不稳定时可能多次传输相同的内容
+  - 网络不可用时，不要尝试执行网络请求
+  - 让用户可以取消长时间运行或者速度很慢的网络操作，设置合适的超时时间
+  - 批量传输，比如，下载视频流时，不要传输很小的数据包，直接下载整个文件或者一大块一大块地下载。如果下载广告，一次性多下载一些，然后再慢慢展示。如果下载电子邮件，一次下载多封，不要一封一封地下载
 
-硬件检测优化
-用户移动、摇晃、倾斜设备时，会产生动作(motion)事件，这些事件由加速度计、陀螺仪、磁力计等硬件检测。在不需要检测的场合，应该及时关闭这些硬件
+- 定位优化
+  - 如果只是需要快速确定用户位置，最好用CLLocationManager的requestLocation方法。定位完成后，会自动让定位硬件断电
+  - 如果不是导航应用，尽量不要实时更新位置，定位完毕就关掉定位服务
+  - 尽量降低定位精度，比如尽量不要使用精度最高的kCLLocationAccuracyBest
+  - 需要后台定位时，尽量设置pausesLocationUpdatesAutomatically为YES，如果用户不太可能移动的时候系统会自动暂停位置更新
+  - 尽量不要使用startMonitoringSignificantLocationChanges，优先考虑startMonitoringForRegion:
+
+- 硬件检测优化
+  - 用户移动、摇晃、倾斜设备时，会产生动作(motion)事件，这些事件由加速度计、陀螺仪、磁力计等硬件检测。在不需要检测的场合，应该及时关闭这些硬件
 
 #### APP启动优化
 
@@ -1948,23 +1950,25 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
 - 热启动（Warm Launch）：APP已经在内存中，在后台存活着，再次点击图标启动APP
 
 > APP启动时间的优化，主要是针对冷启动进行优化
+> 
+
 ###### APP启动时间查看
 - 通过添加环境变量可以打印出APP的启动时间分析（Edit scheme -> Run -> Arguments）DYLD_PRINT_STATISTICS设置为1
 - 如果需要更详细的信息，那就将DYLD_PRINT_STATISTICS_DETAILS设置为1
 
 #### 安装包瘦身
 
-安装包（IPA）主要由可执行文件、资源组成
+> 安装包（IPA）主要由可执行文件、资源组成
 
-资源（图片、音频、视频等）
-采取无损压缩
-去除没有用到的资源： https://github.com/tinymind/LSUnusedResources
+- 资源（图片、音频、视频等）
+  - 采取无损压缩
+  - 去除没有用到的资源： https://github.com/tinymind/LSUnusedResources
 
-可执行文件瘦身
-编译器优化
-Strip Linked Product、Make Strings Read-Only、Symbols Hidden by Default设置为YES
-去掉异常支持，Enable C++ Exceptions、Enable Objective-C Exceptions设置为NO， Other C Flags添加-fno-exceptions
+- 可执行文件瘦身
+  - 编译器优化
+    - Strip Linked Product、Make Strings Read-Only、Symbols Hidden by Default设置为YES
+    - 去掉异常支持，Enable C++ Exceptions、Enable Objective-C Exceptions设置为NO， Other C Flags添加-fno-exceptions
 
-利用AppCode（https://www.jetbrains.com/objc/）检测未使用的代码：菜单栏 -> Code -> Inspect Code
+- 利用AppCode（https://www.jetbrains.com/objc/）检测未使用的代码：菜单栏 -> Code -> Inspect Code
 
-编写LLVM插件检测出重复代码、未被调用的代码  
+- 编写LLVM插件检测出重复代码、未被调用的代码 
