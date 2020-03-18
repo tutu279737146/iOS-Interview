@@ -858,12 +858,14 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   ```
 - `_block_impl`
 
-    ```struct __block_impl {
+    ```
+    struct __block_impl {
       void *isa;
       int Flags;
       int Reserved;
       void *FuncPtr;
     };
+    
     ``` 
 
 - `__MCBlock__method_block_func_0`
