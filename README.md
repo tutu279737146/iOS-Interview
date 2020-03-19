@@ -1015,7 +1015,7 @@ struct __MCBlock__method_block_impl_0 {
   }
   // 8
   ```
-  **__block int multiplier 变为了下面的结构体**
+  **`__block int multiplier` 变为了下面的结构体**
   ```
    Struct _Block_byref_multiplier_0{
       void *_isa;
@@ -1025,7 +1025,11 @@ struct __MCBlock__method_block_impl_0 {
       int multiplier;
    }
   ```  
-  `multiplier = 4;` `==>` `(multiplier.__forwarding ->multiplier) = 4;`
+  **`multiplier = 4;`**
+  ```
+  (multiplier.__forwarding ->multiplier) = 4;
+  
+  ```
   这一步操作,`multiplier`已经变成了对象,通过`multiplier`对象中同类型的`__forwarding`找到对象(由于这是栈上的block,此时__forwarding指针指向的是自己),进行赋值操作
   
 
