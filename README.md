@@ -1025,10 +1025,10 @@ struct __MCBlock__method_block_impl_0 {
       int multiplier;
    }
   ```  
-  **`multiplier = 4;`**
+  **`multiplier = 4;`**则转为如下代码
+  
   ```
   (multiplier.__forwarding ->multiplier) = 4;
-  
   ```
   这一步操作,`multiplier`已经变成了对象,通过`multiplier`对象中同类型的`__forwarding`找到对象(由于这是栈上的block,此时__forwarding指针指向的是自己),进行赋值操作
   
