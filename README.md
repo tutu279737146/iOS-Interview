@@ -1025,7 +1025,7 @@ struct __MCBlock__method_block_impl_0 {
       int multiplier;
    }
   ```  
-  **`multiplier = 4;`**则转为如下代码
+  **`multiplier = 4;`则转为如下代码**
   
   ```
   (multiplier.__forwarding ->multiplier) = 4;
