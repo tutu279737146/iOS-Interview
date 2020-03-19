@@ -1015,7 +1015,7 @@ struct __MCBlock__method_block_impl_0 {
   }
   // 8
   ```
-**  __block int multiplier 变为了下面的结构体**
+  **__block int multiplier 变为了下面的结构体**
   ```
    Struct _Block_byref_multiplier_0{
       void *_isa;
