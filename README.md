@@ -1977,3 +1977,69 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
 - 利用AppCode（https://www.jetbrains.com/objc/）检测未使用的代码：菜单栏 -> Code -> Inspect Code
 
 - 编写LLVM插件检测出重复代码、未被调用的代码 
+
+
+
+## WKWebView的坑
+
+
+#### WKWebView白屏
+
+#### WKWebView白屏原因
+
+- WKWebView是App内部的多进程组件
+- UIWebView内存过大,App会crash
+- WKWebView内存过大,WebContent Process会crash,出现白屏
+
+#### WKWebView白屏解决办法
+
+###### WKNavigationDelegate
+
+` - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView API_AVAILABLE(macosx(10.11), ios(9.0));
+`
+- 当 WKWebView 总体内存占用过大，页面即将白屏的时候，系统会调用上面的回调函数，我们在该函数里执行[webView reload](这个时候 webView.URL 取值尚不为 nil）解决白屏问题。在一些高内存消耗的页面可能会频繁刷新当前页面，H5侧也要做相应的适配操作。
+
+###### 检测webView.title是否为空
+
+- 可以在 viewWillAppear 的时候检测 webView.title 是否为空来 reload 页面。
+
+
+#### WKWebView Cookie问题
+
+> WKWebView Cookie 问题在于 WKWebView 发起的请求不会自动带上存储于 NSHTTPCookieStorage 容器中的 Cookie。
+> 
+
+WKWebView loadRequest 前，在 request header 中设置 Cookie, 解决首个请求 Cookie 带不上的问题；
+
+```
+  WKWebView * webView = [WKWebView new]; 
+  NSMutableURLRequest * request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"手机统一登录"]]; 
+  [request addValue:@"skey=skeyValue" forHTTPHeaderField:@"Cookie"]; 
+  [webView loadRequest:request];
+```
+
+通过 document.cookie 设置 Cookie 解决后续页面(同域)Ajax、iframe 请求的 Cookie 问题；
+注意：document.cookie()无法跨域设置 cookie
+
+```
+  WKUserContentController* userContentController = [WKUserContentController new]; 
+  WKUserScript * cookieScript = [[WKUserScript alloc] initWithSource: @"document.cookie = 'skey=skeyValue';" injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:NO]; 
+  [userContentController addUserScript:cookieScript];
+```
+
+#### WKWebView loadRequest问题
+在 WKWebView 上通过 loadRequest 发起的 post 请求 body 数据会丢失：
+
+```
+ //同样是由于进程间通信性能问题，HTTPBody字段被丢弃
+ [request setHTTPMethod:@"POST"];
+ [request setHTTPBody:[@"bodyData" dataUsingEncoding:NSUTF8StringEncoding]];
+ [wkwebview loadRequest: request];
+```
+
+> 假如想通过-[WKWebView loadRequest:]加载 post 请求 request1: http://h5.qzone.qq.com/mqzone/index,可以通过以下步骤实现：
+
+- 替换请求 scheme，生成新的 post 请求 request2: post://http://h5.qzone.qq.com/mqzone/index, 同时将 request1 的 body 字段复制到 request2 的 header 中（WebKit 不会丢弃 header 字段）;
+- 通过-[WKWebView loadRequest:]加载新的 post 请求 request2;
+- 通过 +[WKBrowsingContextController registerSchemeForCustomProtocol:]注册 scheme: post://;
+- 注册 NSURLProtocol 拦截请求post://http://h5.qzone.qq.com/mqzone/index ,替换请求 scheme, 生成新的请求 request3: http://h5.qzone.qq.com/mqzone/index，将 request2 header的body 字段复制到 request3 的 body 中，并使用 NSURLConnection 加载 request3，最后通过 NSURLProtocolClient 将加载结果返回 WKWebView;
