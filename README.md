@@ -1964,7 +1964,7 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
 
 > APP启动时间的优化，主要是针对冷启动进行优化
 > 
-![main]https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/main%E5%87%BD%E6%95%B0%E5%90%AF%E5%8A%A8.png
+![main](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/main%E5%87%BD%E6%95%B0%E5%90%AF%E5%8A%A8.png)
 ###### APP启动时间查看
 - 通过添加环境变量可以打印出APP的启动时间分析（Edit scheme -> Run -> Arguments）DYLD_PRINT_STATISTICS设置为1
 - 如果需要更详细的信息，那就将DYLD_PRINT_STATISTICS_DETAILS设置为1
