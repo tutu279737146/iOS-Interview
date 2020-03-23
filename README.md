@@ -1900,14 +1900,14 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
   - 离屏渲染的整个过程，需要多次切换上下文环境，先是从当前屏幕（On-Screen）切换到离屏（Off-Screen）；等到离屏渲染结束以后，将离屏缓冲区的渲染结果显示到屏幕上，又需要将上下文环境从离屏切换到当前屏幕
 
   - 哪些操作会触发离屏渲染？
-  - 光栅化，layer.shouldRasterize = YES
+  - 光栅化:layer.shouldRasterize = YES
 
-  - 遮罩，layer.mask
+  - 遮罩:layer.mask
 
-  - 圆角，同时设置layer.masksToBounds = YES、layer.cornerRadius大于0
+  - 圆角:同时设置layer.masksToBounds = YES、layer.cornerRadius大于0
   - 考虑通过CoreGraphics绘制裁剪圆角，或者叫美工提供圆角图片
 
-  - 阴影，layer.shadowXXX
+  - 阴影:layer.shadowXXX
   - 如果设置了layer.shadowPath就不会产生离屏渲染
 
 ###### 卡顿
