@@ -2189,3 +2189,333 @@ dispatch_group_async(manager.completionGroup ?: url_session_manager_completion_g
  });
  
 ```
+## SDWebImage
+
+#### 主要介绍
+
+图片内存层面的相当是个缓存器，以`Key-Value`的形式存储图片。当内存不够的时候会清除所有缓存图片。用搜索文件系统的方式做管理，文件替换方式是以时间为单位，剔除时间大于一周的图片文件。当`SDWebImageManager`向`SDImageCache`要资源时，先搜索内存层面的数据，如果有直接返回，没有的话去访问磁盘，将图片从磁盘读取出来，然后做`Decoder`，将图片对象放到内存层面做备份，再返回调用层。
+
+#### 主要构成
+| 核心类    | 负责模块  |
+|-------|:------:|-----------|-------:|
+| SDWebImageManager  | 负责做任务或者分配任务的，所有的任务操作都会围绕着他去做操作。（调度各个类） |
+| SDImageCache | 下载  |
+| SDWebImageDownloader  | 缓存, 包括内存缓存和磁盘缓存  |
+| SDWebImageCodersManager  | 图片解码 |
+
+`SDWebImageManager`会结合`SDImageCache`和`SDWebImageDownloader`两个类，完成图片加载
+
+
+##### 调度模块（SDWebImageManager）
+> `SDWebImageManager` 负责调度其他核心类配合工作；也是与 SD 的调用者交互的一个类；`SDWebImageManager`将图片下载和图片缓存组合起来了。
+
+- 例如`UIImageView+WebCache`中的 `- (nullable NSURL *)sd_setImageWithURL`方法
+会直接来到 `SDWebImageManager` 的这个方法 :
+
+  ```
+  SDWebImageManager *manager = [SDWebImageManager sharedManager];
+  [manager loadImageWithURL:urlString
+                    options:0
+                   progress:^(
+                              NSInteger receivedSize,
+                              NSInteger expectedSize,
+                              NSURL * _Nullable targetURL)
+  {
+
+  } completed:^(UIImage * _Nullable image,
+                NSData * _Nullable data,
+                NSError * _Nullable error,
+                SDImageCacheType cacheType,
+                BOOL finished,
+                NSURL * _Nullable imageURL) {
+
+  }];
+  ```
+##### 缓存模块（SDImageCache）
+> `SDWebImage` 的缓存包括内存缓存和磁盘缓存内存缓存和磁盘存储都交给 `SDImageCache` 这个类。
+
+```
+/** 用于管理内存缓存  */
+@property (strong, nonatomic, nonnull) SDMemoryCache *memCache;
+
+/** 磁盘路径， Library/Caches + 默认命名空间 @"default" */
+@property (strong, nonatomic, nonnull) NSString *diskCachePath;
+
+/** 磁盘缓存路径数组 */
+@property (strong, nonatomic, nullable) NSMutableArray<NSString *> *customPaths;
+
+/** 执行任务用的串行队列 */
+@property (strong, nonatomic, nullable) dispatch_queue_t ioQueue;
+
+/** 文件管理 */
+@property (strong, nonatomic, nonnull) NSFileManager *fileManager;
+```
+##### 下载模块（SDWebImageDownloader和SDWebImageDownloaderOperation）
+
+- `SDWebImageDownloader`
+    - 下载模块由 `SDWebImageDownloader` 管理的，是以单例存在的；
+    - 作用是创建 `NSURLSession`, 处理所有下载任务的回调并分发给对应的 `SDWebImageDownloaderOperation`
+    - 对图片下载管理进行一些全局的配置,包含最大并行数、超时时间、operation之间的下载顺序、Https等属性进行配置、定义SDWebImageDownloaderOptions的枚举属性等
+        - 设置最大并发数（6），下载时间默认时间（15秒），是否压缩图片和operation之间的下载顺序等
+        - 设置operation的请求头信息，负责生成每个图片的下载单位 SDWebImageDownloaderOperation 以及取消operation 等
+        - 设置下载的策略SDWebImageDownloaderOptions。
+
+- `SDWebImageDownloaderOperation`
+  - `SDWebImageDownloaderOperation` 继承自 `NSOperation`, 是具体的图片下载单位；
+  - 重写了 `NSOperation` 的 `start` 方法。
+    - 当任务添加到 NSOperationQueue 后会执行该方法，启动下载任务。
+    - start 方法执行后, 下载任务开启；但是下载回调由 SDWebImageDownloader 接收, 然后分发给对应的 SDWebImageDownloaderOperation。
+    - 图片下载结束并解码后回调；下载任务就完成了。
+  - 使用 SDWebImageDownloader 的 NSURLSession 创建NSURLSessionTask 发起图片下载；支持下载取消和后台下载，在下载中及时汇报下载进度; 在下载成功后，对图片进行解码，缩放和压缩等操作。
+
+
+##### 解码模块（SDWebImageCodersManager）
+
+- **图片为什么要解码**
+  - `JPEG` 和 `PNG` 图片都是一种压缩的位图格式；
+  - `PNG` 图片是无损压缩，并且支持 `alpha` 通道
+  - `JPEG` 图片则是有损压缩，可以指定 0-100% 的压缩比
+  - 因此，在将磁盘中的图片渲染到屏幕之前必须先要得到图片的原始像素数据才能执行后续的绘制操作
+
+- **图片解码的好处**
+  - 使用`UIImage` 或 `CGImageSource` 的那几个方法创建图片时图片数据并不会立刻解码；
+  - 当图片设置到 `UIImageView` 或者 `CALayer.contents `中去并且 `CALayer` 被提交到 `GPU` 前`CGImage` 中的数据才会得到解码；但是这一步是发生在主线程的，这样就会产生性能问题。
+  - 解决方案是在子线程提前对图片进行强制解码；而强制解码的原理就是对图片进行重新绘制，得到一张新的解码后的位图
+将把图片解码这个默认在主线程执行,耗损CPU的行为,放在了后台线程
+  - 只需要在使用的时候,直接`setImage`,不会有太大的`CPU`消耗，这只是对图片优化的其中一种方式。在图片从下载到显示的过程中有很多个步骤可以优化:[IOS异步图片加载与常用的优化](https://link.jianshu.com/?t=https://segmentfault.com/a/1190000002776279)
+
+
+#### 相关面试问题
+
+##### `SDWebImage`如何保证`UI`操作放在主线程中执行？
+
+> 通过判断是否在**主线程执行改为判断是否由主队列上调度**。
+
+- 由于主队列是一个串行队列，无论任务是异步同步都不会开辟新线程，所以当前队列是主队列等价于当前在主线程上执行。
+- 可以这样说，**在主队列调度的任务肯定在主线程执行，而在主线程执行的任务不一定是由主队列调度的。**
+ 
+
+##### `SDWebImage`的最大并发数和超时时长?
+
+> `_downloadQueue.maxConcurrentOperationCount = 6;` //最大并发数 6
+> `_downloadTimeout = 15.0;` //超时时长 15秒
+
+##### `SDWebImage`的`Memory`缓存和`Disk`缓存是用什么实现的？
+
+- `Memory`缓存使用`SDMemoryCache`
+  - `SDMemoryCache`类继承自`NSCache (NSMapTable)`
+  - `SDWebImage`还专门实现了一个叫做 `AutoPurgeCache` 的类 继承自 `NSCache` ，相比于普通的 `NSCache`，它提供了一个在内存紧张时候释放缓存的能力。
+  - 自动删除机制：当系统内存紧张时，`NSCache` 会自动删除一些缓存对象
+  - 线程安全：从不同线程中对同一个 `NSCache` 对象进行增删改查时，不需要加锁，不同于 `NSMutableDictionary`、`NSCache`存储对象时不会对 `key` 进行 `copy` 操作。
+  - `SDImageCache` 的磁盘缓存是通过异步操作 
+ 
+- `Disk`缓存使用`NSFileManager` 
+  - `NSFileManager` 存储缓存文件到沙盒来实现的。
+
+##### 读取Memory和Disk的时候如何保证线程安全？
+
+- 读取`Memory`
+    -  `NScache`是线程安全的，在多线程操作中，不需要对`Cache`加锁。
+    - 读取缓存的时候是在主线程进行。由于使用`NSCache`进行存储、所以不需要担心单个`value`对象的线程安全。
+
+- 读取`Disk`
+    > 创建了一个名为 **IO的串行队列**，所有`Disk`操作都在此队列中，逐个执行！！
+  - 判断当前是否是`IOQueue` (原理：`SDWebImage` 如何保证`UI`操作放在主线程中执行？)
+  - 在主要存储函数中，**dispatch_async(self.ioQueue, ^{})**
+  - 真正的磁盘缓存是在另一个IO专属线程中的一个串行队列下进行的。
+  - 如果你搜索self.ioQueue还能发现、不只是读取磁盘内容。
+  - 包括删除、写入等所有磁盘内容都是在这个IO线程进行、以保证线程安全。
+  - 但计算大小、获取文件总数等操作。则是在主线程进行。（**看下面代码**）
+   - 我们可以看见，不会创建新线程并且一切操作会顺序执行。你可能会疑惑：为什么同样都是在主线程执行，这样没有死锁。其实这个和线程没有关系，和队列有关系，只要不放在主队列就不会阻塞主队列上的操作(各种系统的UI方法)，这个操作只是选择了合适的时机在主线程上跑了一下而已。
+
+##### SDWebImage 缓存图片的名称如何避免重名?
+
+> 对『绝对路径』进行MD5
+  - 如果单纯使用文件名保存，重名的几率很高！
+  - 使用 `MD5` 的散列函数，对完整的 `URL` 进行 `md5`，结果是一个 32 个字符长度的字符串！
+
+##### `SDWebImage Disk`缓存时长？
+> 时长：默认为一周
+
+##### `SDWebImage Disk`清理操作时间点？
+
+> 分别在『应用被杀死时』和 『应用进入后台时』进行清理操作
+
+```
+[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(deleteOldFiles) name:UIApplicationWillTerminateNotification object:nil];
+[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(backgroundDeleteOldFiles) name:UIApplicationDidEnterBackgroundNotification object:nil];
+//清理磁盘的方法
+- (void)deleteOldFilesWithCompletionBlock:(nullable SDWebImageNoParamsBlock)completionBlock;
+```
+
+- 当应用进入后台时，会涉及到『**Long-Running Task**』(向 iOS 借点时间)
+- 正常程序在进入后台后、虽然可以继续执行任务。但是在时间很短内就会被挂起待机。
+- Long-Running可以让系统为app再多分配一些时间来处理一些耗时任务。
+
+ ```
+- (void)backgroundDeleteOldFiles {
+    Class UIApplicationClass = NSClassFromString(@"UIApplication");
+    if(!UIApplicationClass || ![UIApplicationClass respondsToSelector:@selector(sharedApplication)]) {
+        return;
+    }
+    UIApplication *application = [UIApplication performSelector:@selector(sharedApplication)];
+    // 后台任务标识--注册一个后台任务
+    __block UIBackgroundTaskIdentifier bgTask = [application beginBackgroundTaskWithExpirationHandler:^{
+        [application endBackgroundTask:bgTask];
+        bgTask = UIBackgroundTaskInvalid;
+    }];
+    [self deleteOldFilesWithCompletionBlock:^{
+        //结束后台任务
+        [application endBackgroundTask:bgTask];
+        bgTask = UIBackgroundTaskInvalid;
+    }];
+}
+```
+
+##### `SDWebImage Disk`缓存清理规则?
+
+> 清理缓存的规则分两步进行: 第一步先清除掉过期的缓存文件。 如果清除掉过期的缓存之后，空间还不够。 那么就继续按文件时间从早到晚排序，先清除最早的缓存文件，直到剩余空间达到要求。
+- `SDWebImage` 通过两个属性来控制哪些缓存过期及剩余空间
+
+```objective-c
+@interface SDImageCacheConfig : NSObject
+
+ /**
+* The maximum length of time to keep an image in the cache, in seconds
+*/
+@property (assign, nonatomic) NSInteger maxCacheAge;
+
+/**
+ * The maximum size of the cache, in bytes.
+ */
+@property (assign, nonatomic) NSUInteger maxCacheSize;
+```
+
+##### `maxCacheAge` 和 `maxCacheSize` 有默认值吗？
+- `maxCacheAge` 在上述已经说过了，是有默认值的 **1week**，单位秒。
+- `maxCacheSize` 翻了一遍 SDWebImage 的代码，并没有对 maxCacheSize 设置默认值。 这就意味着 SDWebImage 在默认情况下不会对缓存空间设限制。可以这样设置：
+
+
+```objective-c
+[SDImageCache sharedImageCache].maxCacheSize = 1024 * 1024 * 50;    // 50M
+//maxCacheSize 是以字节来表示的，我们上面的计算代表 50M 的最大缓存空间。 把这行代码写在你的 APP 启动的时候，这样 SDWebImage 在清理缓存的时候，就会清理多余的缓存文件了。
+```
+
+
+###### SDWebImage 的Memory警告是如何处理的！
+
+> 利用通知中心观察
+UIApplicationDidReceiveMemoryWarningNotification 接收到内存警告的通知执行 clearMemory 方法，清理内存缓存！
+```objective-c
+[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(clearMemory) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+```
+
+##### `SDWebImage Disk`目录位于哪里？
+
+> 缓存在沙盒目录下 `Library/Caches`
+> 默认情况下，二级目录为 `~/Library/Caches/default/com.hackemist.SDWebImageCache.default`也可自定义文件名
+```
+- (instancetype)init {
+    return [self initWithNamespace:@"default"];
+}
+- (instancetype)initWithNamespace:(nonnull NSString *)ns {
+    NSString *path = [self makeDiskCachePath:ns];
+    return [self initWithNamespace:ns diskCacheDirectory:path];
+}
+- (instancetype)initWithNamespace:(nonnull NSString *)ns diskCacheDirectory:(nonnull NSString *)directory {
+    if ((self = [super init])) {
+        NSString *fullNamespace = [@"com.hackemist.SDWebImageCache." stringByAppendingString:ns];
+    }
+}
+```
+
+##### `SDWebImage`是如何做到Url不变的情况下，更新图片内容的?
+
+> 方法一：`在AppDelegate didFinishLaunching`的地方追加如下代码：
+```
+-(void)dealHeader{
+    SDWebImageDownloader *imgDownloader = SDWebImageManager.sharedManager.imageDownloader;
+    imgDownloader.headersFilter = ^NSDictionary *(NSURL *url, NSDictionary *headers) {
+        NSFileManager *fm = [[NSFileManager alloc] init];
+        NSString *imgKey = [SDWebImageManager.sharedManager cacheKeyForURL:url];
+        NSString *imgPath = [SDWebImageManager.sharedManager.imageCache defaultCachePathForKey:imgKey];
+        NSDictionary *fileAttr = [fm attributesOfItemAtPath:imgPath error:nil];
+        NSMutableDictionary *mutableHeaders = [headers mutableCopy];
+        NSDate *lastModifiedDate = nil;
+        if (fileAttr.count > 0) {
+            if (fileAttr.count > 0) {
+                lastModifiedDate = (NSDate *)fileAttr[NSFileModificationDate];
+            }
+        }
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        formatter.timeZone = [NSTimeZone timeZoneWithAbbreviation:@"GMT"];
+        formatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US"];
+        formatter.dateFormat = @"EEE, dd MMM yyyy HH:mm:ss z";
+        NSString *lastModifiedStr = [formatter stringFromDate:lastModifiedDate];
+        lastModifiedStr = lastModifiedStr.length > 0 ? lastModifiedStr : @"";
+        [mutableHeaders setValue:lastModifiedStr forKey:@"If-Modified-Since"];
+        return mutableHeaders;
+    };
+}
+
+```
+>   然后，加载图片的地方以前怎么写还是怎么写，但别忘了Option是SDWebImageRefreshCached
+
+
+```
+NSURL *imgURL = [NSURL URLWithString:@"http://handy-img-storage.b0.upaiyun.com/3.jpg"];
+[[self imageView] sd_setImageWithURL:imgURL placeholderImage:nil options:SDWebImageRefreshCached];
+```
+
+> - 方法二：在SDWebImageManager.m大约167行的
+
+
+```
+if (cachedImage && options & SDWebImageRefreshCached) {
+    downloaderOptions &= ~SDWebImageDownloaderProgressiveDownload;
+    downloaderOptions |= SDWebImageDownloaderIgnoreCachedResponse;
+}
+```
+中间加上：
+```
+downloaderOptions &= ~SDWebImageDownloaderUseNSURLCache;
+```
+变成：
+```
+if (cachedImage && options & SDWebImageRefreshCached) {
+    downloaderOptions &= ~SDWebImageDownloaderProgressiveDownload;
+    downloaderOptions &= ~SDWebImageDownloaderUseNSURLCache;
+    downloaderOptions |= SDWebImageDownloaderIgnoreCachedResponse;
+}
+```
+
+
+
+##### `SDWebImage`加载图片的流程
+
+- 入口`sd_setImageWithURL:placeholderImage:`会先把 `placeholderImage`显示，然后 `SDWebImageManager` 根据 `URL` 开始处理图片。(UIImageView+WebCache)
+  - 由于分类中不能添加成员变量，所以runtime关联了sd_imageURL图片的url、sd_imageProgress下载进度
+  -sd_cancelCurrentImageLoad方法取消当前下载
+  - sd_imageIndicator设置当前加载动画，
+  - sd_internalSetImageWithURL:内部通过SDWebImageManager调用加载图片过程并返回调用进度(UIImageView+WebCache)
+
+- 进入 `SDWebImageManager`的 `loadImageWithURL: options: progress: completed:`，交给 `SDImageCache` 从缓存查找图片是否已经存在`queryCacheOperationForKey: options: done`；
+
+  - 先从内存中取（imageFromMemoryCacheForKey:），如果在内存中取，就在当前线程中直接回调doneBlock；
+  - 如果内存中没有，就开子线程从磁盘中取（diskImageDataBySearchingAllPathsForKey:），如果取到图片（ 从硬盘得到的是图片压缩的二进制数据，使用前需要先解码（decompressedImageWithImage:  data: options:），并同步保存到内存缓存中（ [**self**.memCache setObject:diskImage forKey:key cost:cost];）），就回调doneBlock
+
+- 如果磁盘都没有找到图片，则通过`SDImageDownloader(异步下载器)`的`downloadImageWithURL: options: progress: completed:`进行图片下载。
+  -  图片的下载过程是在`SDWebImageDownloader.m`中进行的，实质是通过`SDWebImageDownloaderOperation`(继承自`NSOperation`)对象，把该对象加入到`downloadQueue`里，然后在`start`方法里通过`NSURLSession`来下载图片。
+  - `NSOperation`有两个方法：`main`和`start`，如果想使用同步，那么最简单方法的就是把逻辑写在`main()`中，使用异步，需要把逻辑写到`start()`中，然后加入到队列之中
+    
+    - 首先根据下载 URL 去取下载任务；如果下载任务不存在或者已完成, 就创建新的下载任务；
+    - 创建一个 operation （createDownloaderOperationWithUrl）：网络请求的配置
+    - 创建下载任务 SDWebImageDownloaderOperation 的时候, 传入了 self.session 也就是 NSURLSession；(self.session 的创建是在 SDWebImageDownloader 单例初始化的时候创建的)
+    - SDWebImageDownloaderOperation 拿到这个 NSURLSession 创建 NSURLSessionTask 进行图片请求；
+    - 也就是说 NSURLSession 的代理的是 SDWebImageDownloader；所以所有图片下载任务的代理回调都由 SDWebImageDownloader 来处理；SDWebImageDownloader 再把每个下载任务的回调分发给对应的 SDWebImageDownloaderOperation。
+    - 把下载任务加入任务队列后执行下载任务；SDWebImageDownloadToken 用于取消任务。
+
+
+
+- 图片下载完成后并解码后回调；下载任务就完成了，下载任务完成后，先存储到内存缓存
+  再存储到磁盘中（缓存路径：用图片的下载链接生成 MD5 串, 作为图片缓存的路径）。
