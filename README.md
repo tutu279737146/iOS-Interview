@@ -82,7 +82,14 @@
   - [APP启动优化](#APP启动优化)
   - [安装包瘦身](#安装包瘦身)
   
+- [WKWebView的坑](#WKWebView的坑)
+  - [WKWebView白屏](#WKWebView白屏)
+  - [WKWebView Cookie问题](#WKWebView Cookie问题)
+  - [WKWebView loadRequest问题](#WKWebView loadRequest问题)
   
+- [AFNetWorking](#AFNetWorking)
+  - [主要构成](#主要构成)
+  - [相关面试问题](#相关面试问题)
 ## UI视图相关
 
 #### UIView跟CALayer
@@ -2052,8 +2059,6 @@ WKWebView loadRequest 前，在 request header 中设置 Cookie, 解决首个请
 - 通过 +[WKBrowsingContextController registerSchemeForCustomProtocol:]注册 scheme: post://;
 - 注册 NSURLProtocol 拦截请求post://http://h5.qzone.qq.com/mqzone/index ,替换请求 scheme, 生成新的请求 request3: http://h5.qzone.qq.com/mqzone/index，将 request2 header的body 字段复制到 request3 的 body 中，并使用 NSURLConnection 加载 request3，最后通过 NSURLProtocolClient 将加载结果返回 WKWebView;
 
-
-
 ## AFNetWorking
 
 
@@ -2064,88 +2069,34 @@ WKWebView loadRequest 前，在 request header 中设置 Cookie, 解决首个请
 |            核心类            |                           负责模块                           |
 | :--------------------------: | :----------------------------------------------------------: |
 |     AFURLSessionManager      | `AFNetworking`的核心，用于管理`NSURLSession`，生成`NSURLSessionTask`以及处理`NSURLSessionDelegate`等代理回调。 |
-|     AFHTTPSessionManager     | `AFHTTPSessionManager`-继承自`AFURLSessionManager`，专门用于`HTTP`连接。 |
+|     AFHTTPSessionManager     | `AFHTTPSessionManager`继承自`AFURLSessionManager`，专门用于`HTTP`连接。 |
 | AFNetworkReachabilityManager |                         网络连接检测                         |
 |       AFSecurityPolicy       |                    处理`HTTPS`证书信任等                     |
 |  AFURLRequestSerialization   |               序列化客户端的请求`NSURLRequest`               |
 |  AFURLResponseSerialization  |              序列化服务端的响应`NSURLResponse`               |
 
 #### 相关面试问题
-###### AFN2.0和AFN3.0的区别
+
+##### AFN2.0和AFN3.0的区别
 |            2.0            |                           3.0                           |
 | :---: | :--: |
 |     AFURLConnectionOperation      | AFURLSessionManager |
 |     AFHTTPRequestOperation      | AFHTTPSessionManager |
 |     AFHTTPRequestOperationManager      | AFNetworkReachabilityManager |
 
-- 三个类的更换对应请求方法也进行更换
+- 三个主要类的更换对应着请求方法也进行更换
+- AFN2.0常驻线程,AFN3.0不需要
+- `operationQueue`作用不同
 
 
-###### AFN2.0特点
+##### AFN2.0 为何使用常驻线程?
+- AFN2.0里面把多个网络请求的发起和解析都放在了一个子线程里执行
+- 子线程默认不会开启`runloop`,执行完任务后就退出了。基于connection的网络请求是异步的，导致获取到数据时线程就退出了，网络回调的代理方法无法执行。
+- 所以AFN2.0 通过一个单例，用NSThread创建了一个线程，并且为这个线程添加了一个runloop，并且加了一个NSMachPort，来防止runloop直接退出。 
+- 这条线程就是AFN用来发起网络请求，并且接受网络请求回调的线程，仅仅就这一条线程。
 
-- 保活常驻线程原因：可以避免多个网络请求，就要保活多线程，避免额外的线程开销；
-
-- 常驻线程特点：并发请求，和代理回调都在同一线程（常驻线程）；所以线程等待回调；
-- 并发请求：系统根据情况控制最大并发数；
-- 2.0的operationQueue是用于并发请求的；
-###### AFN3.0特点
-- 无需常驻线程原因：因为NSURLSession可以指定回调的delegateQueue，NSURLConnection而不行；
-- 最大并发数设置：3.0的operationQueue是用于接收NSURLSessionDelegate回调的；
-- self.operationQueue.maxConcurrentOperationCount = 1，是为了达到串行回调的效果，并且加了锁。
-
-###### AFN3.0 弃用了NSURLConnection
-
-- NSURLSession提升了网络连接速度
-
-  > 我们知道iOS9以后，NSURLSession开始正式支持HTTP/2，也就意味着你的网络连接速度可以提升不少。更人性化更优秀的API设计，HTTP/2的支持，成为了开发者摒弃NSURLConnection的理由。
-- Session采用了共享，而非每次都新建
-
-  > 事实上在HTTP/0.9 ,HTTP/1.0协议的时代，每次HTTP的请求，都需要先经过TCP的连接，而后才能开始HTTP的请求。那么，为了让我们的请求更快，避免每次都产生一个TCP三次握手，成了一个优化的选项。于是在HTTP/1.1中共享的Session将会复用TCP的连接，这样就避免了每次操作都开启一个TCP三次握手的时间浪费，即加速了网络请求时间。
-
-###### AFN2.0 为何使用常驻线程
-
-> AFN2.0里面把每一个网络请求的发起和解析都放在了一个线程里执行。正常来说，一个线程执行完任务后就退出了。开启runloop是为了防止线程退出。一方面避免每次请求都要创建新的线程；另一方面，因为connection的请求是异步的，如果不开启runloop，线程执行完代码后不会等待网络请求完的回调就退出了，这会导致网络回调的代理方法不执行。
-> 这是一个单例，用NSThread创建了一个线程，并且为这个线程添加了一个runloop，并且加了一个NSMachPort，来防止runloop直接退出。 这条线程就是AF用来发起网络请求，并且接受网络请求回调的线程，仅仅就这一条线程。
-###### 那有人会问：那网络请求岂不是变成了单线程？
- 首先，每一个请求对应一个AFHTTPRequestOperation实例对象（以下简称operation），每一个operation在初始化完成后都会被添加到一个NSOperationQueue中。
- 由这个NSOperationQueue来控制并发，系统会根据当前可用的核心数以及负载情况动态地调整最大的并发 operation 数量，我们也可以通过setMaxConcurrentoperationCount:方法来设置最大并发数。注意：并发数并不等于所开辟的线程数。具体开辟几条线程由系统决定。
- 也就是说此处执行operation是并发的、多线程的。
-
-###### AFN3.0 为何不需要常驻线程
-
-> NSURLSession发起的请求，不再需要在当前线程进行代理方法的回调！可以指定回调的delegateQueue，这样我们就不用为了等待代理回调方法而苦苦保活线程了。
->
 
 ```
-self.operationQueue = [[NSOperationQueue alloc] init];
-self.operationQueue.maxConcurrentOperationCount = 1;
-self.session = [NSURLSession sessionWithConfiguration:self.sessionConfiguration delegate:self delegateQueue:self.operationQueue];
-```
-指定的用于接收回调的Queue的maxConcurrentOperationCount设为了1，这里目的是想要让并发的请求串行的进行回调。
-
-###### 为什么要串行回调？
-
-```
-- (AFURLSessionManagerTaskDelegate *)delegateForTask:(NSURLSessionTask *)task {
-     NSParameterAssert(task);
-     AFURLSessionManagerTaskDelegate *delegate = nil;
-     [self.lock lock];
-     //给所要访问的资源加锁，防止造成数据混乱
-     delegate = self.mutableTaskDelegatesKeyedByTaskIdentifier[@(task.taskIdentifier)];
-     [self.lock unlock];
-     return delegate;
-}
-```
-这边对 self.mutableTaskDelegatesKeyedByTaskIdentifier 的访问进行了加锁，目的是保证多线程环境下的数据安全。既然加了锁，就算maxConcurrentOperationCount不设为1，当某个请求正在回调时，下一个请求还是得等待一直到上个请求获取完所要的资源后解锁，所以这边并发回调也是没有意义的。相反多task回调导致的多线程并发，还会导致性能的浪费。
-
-###### 为什么AF3.0中需要设self.operationQueue.maxConcurrentOperationCount = 1；而AF2.0却不需要？**
-
-> 解答：功能不一样：AF3.0的operationQueue是用来接收NSURLSessionDelegate回调的，鉴于一些多线程数据访问的安全性考虑，设置了maxConcurrentOperationCount = 1来达到串行回调的效果。
-> 而AF2.0的operationQueue是用来添加operation并进行并发请求的，所以不要设置为1。
-
-###### AF中常驻线程的实现
-
-```objective-c
 //首先用NSThread创建了一个线程，并且这个线程是个单例。
 + (NSThread *)networkRequestThread {
     static NSThread *_networkRequestThread = nil;
@@ -2168,27 +2119,70 @@ self.session = [NSURLSession sessionWithConfiguration:self.sessionConfiguration 
         [runLoop run];
     }
 }
-
 ```
+##### 那有人会问：那网络请求岂不是变成了单线程？
+ - 一个请求对应一个AFHTTPRequestOperation实例对象（以下简称operation），
+ - 每一个operation在初始化完成后都会被添加到一个NSOperationQueue中- 由这个NSOperationQueue来控制并发，系统会根据当前可用的核心数以及负载情况动态地调整最大的并发 operation 数量，我们也可以通过setMaxConcurrentoperationCount:方法来设置最大并发数。
+ - 并发数并不等于所开辟的线程数。具体开辟几条线程由系统决定。
+ - 也就是说此处执行operation是并发的、多线程的。
 
-###### AFN进行数据请求会开辟多条线程吗？
+##### AFN3.0 为何不需要常驻线程?
 
- ```objective-c
+> NSURLSession发起的请求，不再需要在当前线程进行代理方法的回调！可以指定回调的delegateQueue，这样我们就不用为了等待代理回调方法而苦苦保活线程了。
+>
+
+
+##### AFN2.0 `operationQueue`
+> AF2.0的operationQueue是用来添加operation并进行并发请求的，不要设置为1。
+##### AFN3.0 `operationQueue`
+> AF3.0的operationQueue是用来接收NSURLSessionDelegate回调的，鉴于一些多线程数据访问的安全性考虑，设置了maxConcurrentOperationCount = 1来达到串行回调的效果。
+```
 self.operationQueue = [[NSOperationQueue alloc] init];
 self.operationQueue.maxConcurrentOperationCount = 1;
 self.session = [NSURLSession sessionWithConfiguration:self.sessionConfiguration delegate:self delegateQueue:self.operationQueue];
 ```
-这里在operation队列中设置了最大并发数是1，让所有网络请求和等待网络响应都在同一条线程，而不是为每一条网络请求都新建一个线程，这样会节约很多资源。
-> 
-###### 使用AFN之后需要在回调后如果操作UI，需要回到主线程进行操作吗?
+- 串行回调原因:
+> 为了保证多线程环境下的数据安全,对self.mutableTaskDelegatesKeyedByTaskIdentifier 的访问进行了加锁处理，就算maxConcurrentOperationCount不设为1，当某个请求正在回调时，下一个请求还是得等待一直到上个请求获取完所要的资源后解锁，所以这边并发回调也是没有意义的。相反多task回调导致的多线程并发，还会导致性能的浪费。
 
-> 不需要，AFN内部已经进行了处理。下边是我们AFN的源码。
+```
+- (AFURLSessionManagerTaskDelegate *)delegateForTask:(NSURLSessionTask *)task {
+     NSParameterAssert(task);
+     AFURLSessionManagerTaskDelegate *delegate = nil;
+     [self.lock lock];
+     //给所要访问的资源加锁，防止造成数据混乱
+     delegate = self.mutableTaskDelegatesKeyedByTaskIdentifier[@(task.taskIdentifier)];
+     [self.lock unlock];
+     return delegate;
+}
+```
+
+
+##### AFN3.0 弃用了NSURLConnection
+
+- NSURLSession提升了网络连接速度
+
+  > 我们知道iOS9以后，NSURLSession开始正式支持HTTP/2，也就意味着你的网络连接速度可以提升不少。更人性化更优秀的API设计，HTTP/2的支持，成为了开发者摒弃NSURLConnection的理由。
+- Session采用了共享，而非每次都新建
+
+  > 事实上在HTTP/0.9,HTTP/1.0协议的时代，每次HTTP的请求，都需要先经过TCP的连接，而后才能开始HTTP的请求。那么，为了让我们的请求更快，避免每次都产生一个TCP三次握手，成了一个优化的选项。于是在HTTP/1.1中共享的Session将会复用TCP的连接，这样就避免了每次操作都开启一个TCP三次握手的时间浪费，即加速了网络请求时间。
+  
+##### AFN进行数据请求会开辟多条线程吗？
+
+```
+self.operationQueue = [[NSOperationQueue alloc] init];
+self.operationQueue.maxConcurrentOperationCount = 1;
+self.session = [NSURLSession sessionWithConfiguration:self.sessionConfiguration delegate:self delegateQueue:self.operationQueue];
+```
+> 这里在operation队列中设置了最大并发数是1，让所有网络请求和等待网络响应都在同一条线程，而不是为每一条网络请求都新建一个线程，这样会节约很多资源。
+> 
+##### 使用AFN之后需要在回调后如果操作UI，需要回到主线程进行操作吗?
+
+> 不需要，AFN内部已经进行了处理
 ```
 dispatch_group_async(manager.completionGroup ?: url_session_manager_completion_group(), manager.completionQueue ?: dispatch_get_main_queue(), ^{
      if (self.completionHandler) {
          self.completionHandler(task.response, responseObject, error);
      }
- 
      dispatch_async(dispatch_get_main_queue(), ^{
          [[NSNotificationCenter defaultCenter] postNotificationName:AFNetworkingTaskDidCompleteNotification object:task userInfo:userInfo];
      });
