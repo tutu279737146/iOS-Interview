@@ -81,6 +81,7 @@
   - [耗电优化](#耗电优化)
   - [APP启动优化](#APP启动优化)
   - [安装包瘦身](#安装包瘦身)
+  - [崩溃优化](#崩溃优化)
   
 - [WKWebView的坑](#WKWebView的坑)
   - [WKWebView白屏](#WKWebView白屏)
@@ -1997,7 +1998,11 @@ typedef void(^ResultBlock)(BusinessObject *handler, BOOL handled);
 
 - 编写LLVM插件检测出重复代码、未被调用的代码 
 
-
+#### 崩溃优化
+- 数组越界,字典插nil
+- KVC私有属性
+- 多次移除同一 KVO 会 crash
+- 通知9.0之前移除问题
 
 ## WKWebView的坑
 
