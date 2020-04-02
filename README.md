@@ -1218,7 +1218,23 @@ struct __MCBlock__method_block_impl_0 {
     // 异步方式分派到global_queue队列,子线程执行没有开启runloop
     ```
 ###### dispatch_barrier_async() 
-- 用来实现多读单写
+> 用来实现多读单写
+
+```
+- (id)readDataForKey:(NSString *)key{
+    __block id result;
+    dispatch_sync(_concurrentQueue, ^{
+        result = [self valueForKey:key];
+    });
+    return result;;
+}
+
+- (void)writeData:(id)data forKey:(NSString *)key{
+    dispatch_barrier_async(_concurrentQueue, ^{
+        [self setValue:data forKey:key];
+    })
+}
+```
 ###### dispatch_group_t
 
 #### NSOperation
