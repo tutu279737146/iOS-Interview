@@ -1140,8 +1140,43 @@ struct __MCBlock__method_block_impl_0 {
 
 ## 多线程
 
-#### GCD
-###### 同步 异步 串行 并发
+#### 进程、线程
+
+###### 进程
+- 进程是一个具有一定独立功能的程序关于某次数据集合的一次运行活动，它是操作系统分配资源的基本单元.
+- 进程是指在系统中正在运行的一个应用程序，就是一段程序的执行过程,我们可以理解为手机上的一个app.
+- 每个进程之间是独立的，每个进程均运行在其专用且受保护的内存空间内，拥有独立运行所需的全部资源
+
+###### 线程
+- 程序执行流的最小单元，线程是进程中的一个实体.
+- 一个进程要想执行任务,必须至少有一条线程.应用程序启动的时候，系统会默认开启一条线程,也就是主线程
+
+###### 关系
+- 线程是进程的执行单元，进程的所有任务都在线程中执行
+- 线程是CPU分配资源和调度的最小单位
+- 一个程序可以对应多个进程(多进程),一个进程中可有多个线程,但至少要有一条线程
+- 同一个进程内的线程共享进程资源
+
+
+###### 坑
+> 一个进程中可以开启另一个进程吗?
+> 
+
+- WKWebView
+
+#### 任务、队列
+###### 任务
+> 就是执行操作的意思，也就是在线程中执行的那段代码。在GCD中是放在block中的。执行任务有两种方式：同步执行（sync）和异步执行（async）
+
+- **同步(Sync)：** 同步添加任务到指定的队列中，在添加的任务执行结束之前，会一直等待，直到队列里面的任务完成之后再继续执行，即会阻塞线程。只能在当前线程中执行任务(是当前线程，不一定是主线程)，不具备开启新线程的能力。
+- **异步(Async)：** 线程会立即返回，无需等待就会继续执行下面的任务，不阻塞当前线程。可以在新的线程中执行任务，具备开启新线程的能力(并不一定开启新线程)。如果不是添加到主队列上，异步会在子线程中执行任务
+
+###### 队列
+> 队列（DispatchQueue）：这里的队列指执行任务的等待队列，即用来存放任务的队列。队列是一种特殊的线性表，采用FIFO（先进先出）的原则，即新任务总是被插入到队列的末尾，而读取任务的时候总是从队列的头部开始读取。每读取一个任务，则从队列中释放一个任务
+
+- **串行队列（SerialDispatchQueue）：** 同一时间内，队列中只能执行一个任务，只有当前的任务执行完成之后，才能执行下一个任务。（只开启一个线程，一个任务执行完毕后，再执行下一个任务）。主队列是主线程上的一个串行队列,是系统自动为我们创建的
+- **并发队列（ConcurrentDispatchQueue）：** 同时允许多个任务并发执行。（可以开启多个线程，并且同时执行任务）。并发队列的并发功能只有在异步（dispatch_async）函数下才有效
+###### 组合
 - 组合1 同步分派任务到串行队列
   > `dispatch_sync(serial_queue,^{//任务})`
   > 
@@ -1161,10 +1196,10 @@ struct __MCBlock__method_block_impl_0 {
         [self doSomething];
         }); 
     }
-     // 正常运行
+    // 正常运行
     // 说明:主队列不管是以同步方式添加任务还是异步方式添加任务,都是在主线程来执行
     ```
-     ```
+    ```
     // 改为自定义串行队列
     - (void)viewDidLoad{
         dispatch_sync(serialQueue,^{
@@ -1217,6 +1252,25 @@ struct __MCBlock__method_block_impl_0 {
     // 13
     // 异步方式分派到global_queue队列,子线程执行没有开启runloop
     ```
+    
+#### GCD
+
+###### dispatch_once
+> 我们在创建单例、或者有整个程序运行过程中只执行一次的代码时，我们就用到了 GCD 的 dispatch_once 方法。使用 dispatch_once 方法能保证某段代码在程序运行过程中只被执行 1 次，并且即使在多线程的环境下，dispatch_once 也可以保证线程安全。
+> 
+```
+/**
+ * 一次性代码（只执行一次）dispatch_once
+ */
+- (void)once {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        // 只执行 1 次的代码（这里面默认是线程安全的）
+    });
+}
+
+```
+
 ###### dispatch_barrier_async() 
 > 用来实现多读单写
 
@@ -1232,11 +1286,216 @@ struct __MCBlock__method_block_impl_0 {
 - (void)writeData:(id)data forKey:(NSString *)key{
     dispatch_barrier_async(_concurrentQueue, ^{
         [self setValue:data forKey:key];
-    })
+    });
 }
 ```
-###### dispatch_group_t
 
+###### dispatch_semaphore
+> GCD 中的信号量是指 Dispatch Semaphore，是持有计数的信号。
+- dispatch_semaphore_create：创建一个 Semaphore 并初始化信号的总量
+  ```
+  struct semaphore{
+    int value;
+    List<thread>;
+  }
+  ```
+- dispatch_semaphore_signal：发送一个信号，让信号总量加 1
+  ```
+  {
+    S.value = S.value + 1;
+    if S.value <= 0 then wakeup(S.list);唤醒是一个被动行为
+  }
+  ``` 
+- dispatch_semaphore_wait：可以使总信号量减 1，信号总量小于 0 时就会一直等待（阻塞所在线程），否则就可以正常执行。
+  ```
+  {
+    S.value = S.value - 1;
+    if S.value < 0 then Block(S.list);阻塞是一个主动行为
+  }
+  ``` 
+**应用**
+- 保证线程同步,异步执行任务转换为同步执行任务
+  - AFN
+  ```
+  - (NSArray *)tasksForKeyPath:(NSString *)keyPath {
+    __block NSArray *tasks = nil;
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    [self.session getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
+        if ([keyPath isEqualToString:NSStringFromSelector(@selector(dataTasks))]) {
+            tasks = dataTasks;
+        } else if ([keyPath isEqualToString:NSStringFromSelector(@selector(uploadTasks))]) {
+            tasks = uploadTasks;
+        } else if ([keyPath isEqualToString:NSStringFromSelector(@selector(downloadTasks))]) {
+            tasks = downloadTasks;
+        } else if ([keyPath isEqualToString:NSStringFromSelector(@selector(tasks))]) {
+            tasks = [@[dataTasks, uploadTasks, downloadTasks] valueForKeyPath:@"@unionOfArrays.self"];
+        }
+
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+
+    return tasks;
+  }
+  ```
+  - 举例
+  ```
+  // semaphore 线程同步
+  - (void)semaphoreSync {
+
+      NSLog(@"currentThread---%@",[NSThread currentThread]);  // 打印当前线程
+      NSLog(@"semaphore---begin");
+
+      dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+      dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+      __block int number = 0;
+      dispatch_async(queue, ^{
+          // 追加任务 1
+          [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+          NSLog(@"1---%@",[NSThread currentThread]);      // 打印当前线程
+
+          number = 100;
+
+          dispatch_semaphore_signal(semaphore);
+      });
+
+      dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+      NSLog(@"semaphore---end,number = %zd",number);
+  }
+  
+    // 打印
+    <NSThread: >{number = 1, name = main}
+    semaphore---begin
+    1---<NSThread: >{number = 7, name = (null)}
+    semaphore---end
+    number = 100
+  ```
+- 保证线程安全,为线程加锁
+
+
+###### dispatch_group_t
+> 异步执行若干耗时任务后再执行其他任务
+> 
+
+- **说明:**
+  - 调用队列组的 dispatch_group_async 先把任务放到队列中，然后将队列放入队列组中。或者使用队列组的 dispatch_group_enter、dispatch_group_leave 组合来实现 dispatch_group_async。
+  - 调用队列组的 dispatch_group_notify 回到指定线程执行任务。或者使用 dispatch_group_wait 回到当前线程继续向下执行（会阻塞当前线程）。
+
+- **举例:**
+  - **dispatch_group_notify**
+  ```
+  // 队列组 dispatch_group_notify
+  - (void)groupNotify {
+      NSLog(@"currentThread---%@",[NSThread currentThread]);  // 打印当前线程
+      NSLog(@"group---begin");
+
+      dispatch_group_t group =  dispatch_group_create();
+
+      dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+          // 追加任务 1
+          [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+          NSLog(@"1---%@",[NSThread currentThread]);      // 打印当前线程
+      });
+
+      dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+          // 追加任务 2
+          [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+          NSLog(@"2---%@",[NSThread currentThread]);      // 打印当前线程
+      });
+
+      dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+          // 等前面的异步任务 1、任务 2 都执行完毕后，回到主线程执行下边任务
+          [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+          NSLog(@"3---%@",[NSThread currentThread]);      // 打印当前线程
+
+          NSLog(@"group---end");
+      });
+  }
+  // 打印:  
+    <NSThread:>{number = 1, name = main}
+    group---begin
+    2---<NSThread>{number = 4, name = (null)}
+    1---<NSThread:>{number = 5, name = (null)}
+    3---<NSThread:>{number = 1, name = main}
+    group---end
+
+  ```
+  - **dispatch_group_wait**
+  ```
+  - (void)groupWait {
+    NSLog(@"currentThread---%@",[NSThread currentThread]);  // 打印当前线程
+    NSLog(@"group---begin");
+    
+    dispatch_group_t group =  dispatch_group_create();
+    
+    dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        // 追加任务 1
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@"1---%@",[NSThread currentThread]);      // 打印当前线程
+    });
+    
+    dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        // 追加任务 2
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@"2---%@",[NSThread currentThread]);      // 打印当前线程
+    });
+    
+    // 等待上面的任务全部完成后，会往下继续执行（会阻塞当前线程）
+    dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+  }    
+    // 打印
+    NSLog(@"group---end");
+    <NSThread: >{number = 1, name = main}
+    group---begin
+    1---<NSThread: >{number = 5, name = (null)}
+    2---<NSThread: >{number = 4, name = (null)}
+    group---end
+  ```
+  - **dispatch_group_enter**,**dispatch_group_leave**
+  ```
+  - (void)groupEnterAndLeave {
+    NSLog(@"currentThread---%@",[NSThread currentThread]);  // 打印当前线程
+    NSLog(@"group---begin");
+    
+    dispatch_group_t group = dispatch_group_create();
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    dispatch_group_enter(group);
+    dispatch_async(queue, ^{
+        // 追加任务 1
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@"1---%@",[NSThread currentThread]);      // 打印当前线程
+
+        dispatch_group_leave(group);
+    });
+    
+    dispatch_group_enter(group);
+    dispatch_async(queue, ^{
+        // 追加任务 2
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@"2---%@",[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_group_leave(group);
+    });
+    
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        // 等前面的异步操作都执行完毕后，回到主线程.
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@"3---%@",[NSThread currentThread]);      // 打印当前线程
+    
+        NSLog(@"group---end");
+    });
+  }
+  
+    // 打印:  
+    <NSThread:>{number = 1, name = main}
+    group---begin
+    2---<NSThread>{number = 4, name = (null)}
+    1---<NSThread:>{number = 5, name = (null)}
+    3---<NSThread:>{number = 1, name = main}
+    group---end
+  ```
 #### NSOperation
 - 优点
   - 添加任务依赖
@@ -1258,8 +1517,45 @@ struct __MCBlock__method_block_impl_0 {
 - main()
 - [target performSelector:selector]
 - exit()
+
+###### 使用方法
+- 初始化方法
+  ```
+   // 初始化方法
+    NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(testThread: ) object:@"参数"];
+    // start启动
+    [thread start];
+    // 可以为开辟的子线程起名字
+    thread.name = @"NSThread线程";
+    // 调整thread权限,0-1,越大被执行概率越高,由于是概率无法精确控制顺序
+    thread.threadPriority = 1;
+    // 取消启动的线程
+    [thread cancel];
+  ```
+- 构造器方法
+  ```
+    // 构造器方式开辟子线程
+    [NSThread detachNewThreadSelector:@selector(testThread: ) toTarget:self withObject:@"构造器方法"];
+  ```
+  
+- `performSelector...`  
+  - 只要是NSObject的子类或者对象都可以通过调用方法进入子线程和主线程，其实这些方法所开辟的子线程也是NSThread的另一种体现方式。
+  - 在编译阶段并不会去检查方法是否有效存在，如果不存在只会给出警告
+  -  带`afterDelaye`的需要跟runloop相关
+  ```
+  // 在当前线程 延迟1秒执行 响应OC语言动态性 延迟到运行时才绑定方法
+    [self performSelector:@selector(aaa) withObject:nil afterDelay:1.0];
+    // 回到主线程 waitUntilDone是否将回调方法执行完再执行后面的代码
+    [self performSelectorOnMainThread:@selector(aaa) withObject:nil waitUntilDone:YES];
+    // 开辟子线程
+    [self performSelectorInBackground:@selector(aaa) withObject:nil];
+    // 在指定线程执行
+    [self performSelector:@selector(aaa) onThread:[NSThread currentThread] withObject:nil waitUntilDone:YES];
+  ```
 ###### 常驻线程
 - 见runloop
+
+
 #### 多线程与锁
 
 ###### @synchronized
@@ -1274,7 +1570,8 @@ struct __MCBlock__method_block_impl_0 {
 - 循环等待访问,不释放当前资源
 - 用于轻量级数据访问,例如简单的int值的+1/-1操作,系统源码层面引用计数简单的+1/-1操作
 ###### NSRecursiveLock
-
+- 互斥锁
+- 当上一个线程的任务没有执行完毕的时候（被锁住），那么下一个线程会进入睡眠状态等待任务执行完毕，当上一个线程的任务执行完毕，下一个线程会自动唤醒然后执行任务。
 ###### NSLock
 - 面试题(蚂蚁金服)
   ```
@@ -1294,34 +1591,7 @@ struct __MCBlock__method_block_impl_0 {
   // 某一线程调取lock方法获取到这个锁,然后又对同一把锁再次调用`lock`方法,已经获取到锁,再次去获取锁,造成死锁
   // 使用递归锁
   ```
-###### dispatch_semaphore_t
 
-- dispatch_semaphore_create(1)
-  - 源码
-
-  ```
-  struct semaphore{
-    int value;
-    List<thread>;
-  }
-  ```
-- dispatch_semaphore_wait(semaphore,DISPATCH_TIME_FOREVER);
-  -  源码
-  ```
-  {
-    S.value = S.value - 1;
-    if S.value < 0 then Block(S.list);阻塞是一个主动行为
-  }
-  ``` 
-
-- dispatch_semaphore_signal(semaphore)
-  -  源码
-  ```
-  {
-    S.value = S.value + 1;
-    if S.value <= 0 then wakeup(S.list);唤醒是一个被动行为
-  }
-  ``` 
 ## Runloop
 
 #### 概念
