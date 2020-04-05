@@ -150,7 +150,7 @@
         return NO;
     }
     return YES;
-}
+  }
   ```
 
 #### 图像显示原理
