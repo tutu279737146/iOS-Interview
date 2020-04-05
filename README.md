@@ -136,6 +136,23 @@
 - 与事件传递过程相反
 - 如果hitTest:withEvent:找到了第一响应者initial view，但是该响应者没有处理该事件，那么事件会沿着响应者链向上传递：第一响应者 -> 父视图 -> 视图控制器，如果传递到最顶级视图还没处理事件，那么就传递给UIWindow去处理，若window对象也不处理那么就交给UIApplication处理，如果UIApplication对象还不处理，就丢弃该事件（但是并不会引起崩溃）
 
+###### 给Button添加手势UIGes
+
+> 给button添加手势后,不走button的方法
+- UIButton--->UIContorl--->UIView--->UIResponder
+- UIGestureRecognizer有个属性`cancelsTouchesInView`,默认值是`YES`,代表当手势识别成功后,会发送`touchsCancelled`消息给`view(此处是button)`来结束`view`的响应
+- 解决一:`cancelsTouchesInView = NO`,那么手势跟view都响应
+- 解决二:`gesture`代理方法加判断
+
+  ```
+  - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch{
+    if ([touch.view isKindOfClass:[UIButton class]]) {
+        return NO;
+    }
+    return YES;
+}
+  ```
+
 #### 图像显示原理
 ###### 图像显示原理
 - CPU和GPU两个硬件是通过总线链接起来的
