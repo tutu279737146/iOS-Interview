@@ -1075,13 +1075,13 @@ struct __MCBlock__method_block_impl_0 {
 
 #### Block内存管理
 ###### 种类
-- 栈 `_NSConcreteStackBlock`
-- 堆 `_NSConcreteMallocBlock`
-- 全局 `_NSConcreteGlobalBlock`
+- **栈** `_NSConcreteStackBlock`
+- **堆** `_NSConcreteMallocBlock`
+- **全局** `_NSConcreteGlobalBlock`
 ###### `copy`操作
-- 栈 堆上生成block
-- 堆 什么都不做
-- 全局 增加引用计数
+- **栈** 堆上生成block
+- **堆** 增加引用计数
+- **全局** 什么都不做
 
 ###### `__forwarding`指针作用
 
