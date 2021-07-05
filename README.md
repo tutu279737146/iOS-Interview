@@ -1738,6 +1738,8 @@ struct __CFRunLoopMode {
   - 取当前mode名称(value) `CFStringRef modeName = (CFStringRef)value`
   - 取当前上下文中的runloop和item
   - 根据item类型判断来决定调用 addSource addObserver还是addTimer
+  - 此时调用addTimer回到上面的方法`CFRunLoopAddTimer(rl, (CFRunloopTimerRef)item, modeName)`,此时的入参modeName已经从commonMode变成了被打上了commonMode标记的一个具体的实际的mode
+  - 在CFRunLoopAddTimer中,才会真正的把timer添加到对应的runloop mode下的timers数组中,这样就实现了多个timer同步到多个mode下
 
 #### Runloop与多线程
 ###### 关系
