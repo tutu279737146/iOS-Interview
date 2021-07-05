@@ -1561,7 +1561,7 @@ struct __MCBlock__method_block_impl_0 {
 - `performSelector...`  
   - 只要是NSObject的子类或者对象都可以通过调用方法进入子线程和主线程，其实这些方法所开辟的子线程也是NSThread的另一种体现方式。
   - 在编译阶段并不会去检查方法是否有效存在，如果不存在只会给出警告
-  -  带`afterDelaye`的需要跟runloop相关
+  -  带`afterDelay`的需要跟runloop相关
   ```
   // 在当前线程 延迟1秒执行 响应OC语言动态性 延迟到运行时才绑定方法
     [self performSelector:@selector(aaa) withObject:nil afterDelay:1.0];
