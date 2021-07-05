@@ -1703,11 +1703,11 @@ struct __CFRunLoopMode {
 ##### 事件循环的实现机制
 ###### void CFRunLoopRun()
 
-![runloop事件循环](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/runloop%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF%E6%9C%BA%E5%88%B6.png)
+![runloop事件循环](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/Runloop%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF%E6%9C%BA%E5%88%B6.png)
 - 1.即将进入Runloop,发通知
 - 2.将要处理Timer/Source0事件, 发通知
 - 3.处理source0事件
-- 4.如果有source1事件处理,todo跳转8
+- 4.如果有source1事件处理,goto语句跳转8
 - 5.没事件处理,线程将要休眠,发通知
 - 6.休眠,等待唤醒
   - Source1唤醒
