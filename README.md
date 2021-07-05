@@ -1724,7 +1724,20 @@ struct __CFRunLoopMode {
 - `main()`函数经过一系列调用会调用为系统的`mach_msg()`函数,这样就发生了系统调用
 - 经过系统调,当前线程就把控制权交给了内核态,`mach_msg()`函数在一定条件下会返回给调用方,这个触发返回的逻辑就是唤醒线程的逻辑(source1,手动唤醒等)
 #### Runloop与NSTimer
-###### void CFRunLoopAddTimer(runLoop,timer,commonMode)
+###### 如何将Timer同步到多个Mode中
+
+- void CFRunLoopAddTimer(runLoop,timer,commonMode) ==> void CFRunLoopAddTimer(CFRunLoopRef rl, CFRunLoopTimerRef rlt, CFStringRef modeName)
+  - 通过modeName判断,如果当前是commonMode `(modeName = kCFRunLoopCommonModes)`
+  - 取出传入runloop(rl)的commonModes这个集合 `CFSetRef set = rl->_commonModes`
+  - 同时判断传入runloop(rl)对应的_commonModeItems是否为空,为空时创建
+  - 然后把timer(rlt)添加到commonModeItems集合中 `CFSetAddValue(rl->_commonModeItems, rlt)`
+  - 然后把runloop跟timer封装成一个context `CFTypedef context[2] = {rl, rlt}`
+  - 然后对集合set中每一个元素调用 `CFSetApplyFunction(set, (__CFRunLoopAddItemToCommonModes), (void *)context)`
+
+- void __CFRunLoopAddItemToCommonModes(const void *value, void *ctx) 
+  - 取当前mode名称(value) `CFStringRef modeName = (CFStringRef)value`
+  - 取当前上下文中的runloop和item
+  - 根据item类型判断来决定调用 addSource addObserver还是addTimer
 
 #### Runloop与多线程
 ###### 关系
