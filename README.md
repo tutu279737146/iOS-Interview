@@ -40,7 +40,7 @@
   - [对象一类对象一元类对象](#对象一类对象一元类对象)
   - [消息传递](#消息传递)
   - [消息转发](#消息转发)
-  - [MethodSwizzing](#MethodSwizzing)
+  - [Method-Swizzling](#Method-Swizzling)
   - [动态添加方法](#动态添加方法)
   - [动态方法解析](#动态方法解析)
    
@@ -835,7 +835,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - `- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector`和`forwardInvocation`
   - 是否返回方法签名,进而处理
 
-#### **MethodSwizzling**
+#### **Method-Swizzling**
 
 ![交换方法](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%96%B9%E6%B3%95%E4%BA%A4%E6%8D%A2.png)
 #### **动态添加方法**
