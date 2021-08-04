@@ -40,7 +40,7 @@
   - [对象一类对象一元类对象](#对象一类对象一元类对象)
   - [消息传递](#消息传递)
   - [消息转发](#消息转发)
-  - [Method一Swizzing](#Method一Swizzing)
+  - [MethodSwizzing](#MethodSwizzing)
   - [动态添加方法](#动态添加方法)
   - [动态方法解析](#动态方法解析)
    
@@ -54,7 +54,7 @@
 - [网络](#网络)
   - [HTTP协议](#HTTP协议)
   - [HTTPS与网络安全](#HTTPS与网络安全)
-  - [TCP一UDP传输层协议](#TCP一UDP传输层协议)
+  - [TCP和UDP传输层协议](#TCP和UDP传输层协议)
   - [DNS解析](#DNS解析)
   
   
@@ -835,7 +835,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - `- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector`和`forwardInvocation`
   - 是否返回方法签名,进而处理
 
-#### **Method一Swizzling**
+#### **MethodSwizzling**
 
 ![交换方法](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%96%B9%E6%B3%95%E4%BA%A4%E6%8D%A2.png)
 #### **动态添加方法**
@@ -1874,7 +1874,7 @@ struct __CFRunLoopMode {
 ###### HTTPS连接使用了哪些加密手段?为什么?
 - 连接建立过程中使用非对称加密,耗时但是安全
 - 后续通信过程使用对称加密
-#### TCP、UDP传输层协议
+#### TCP和UDP传输层协议
 
 ##### TCP 传输控制协议
 ###### 特点
