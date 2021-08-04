@@ -11,7 +11,7 @@
 - [内存管理](#内存管理)
   - [内存布局](#内存布局)
   - [内存管理方案](#内存管理方案)
-  - [ARC&MRC](#ARC&MRC)
+  - [ARC&MRC](#ARCMRC)
   - [弱引用](#弱引用)
   - [自动释放池](#自动释放池)
 - [Objective-C语言特性](#Objective-C语言特性)
@@ -308,7 +308,7 @@
       - `hash`表
       ![%E5%BC%B1%E5%BC%95%E7%94%A8%E8%A1%A8.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%BC%B1%E5%BC%95%E7%94%A8%E8%A1%A8.png)
 
-#### ARC&MRC
+#### ARCMRC
 
 - MRC
   - **`alloc`**
