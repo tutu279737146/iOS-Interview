@@ -6,12 +6,12 @@
   - [事件传递与视图响应链](#事件传递与视图响应链)
   - [图像显示原理](#图像显示原理)
   - [UI卡顿掉帧原因](#UI卡顿掉帧原因)
-  - [绘制原理&异步绘制](#绘制原理&异步绘制)
+  - [绘制原理一异步绘制](#绘制原理一异步绘制)
   - [离屏渲染](#离屏渲染)
 - [内存管理](#内存管理)
   - [内存布局](#内存布局)
   - [内存管理方案](#内存管理方案)
-  - [ARC&MRC](#ARCMRC)
+  - [ARC与MRC](#ARC与MRC)
   - [弱引用](#弱引用)
   - [自动释放池](#自动释放池)
 - [Objective-C语言特性](#Objective-C语言特性)
@@ -37,10 +37,10 @@
   - [多线程与锁](#多线程与锁)
 - [Runtime](#Runtime)
   - [Runtime数据结构](#Runtime数据结构)
-  - [对象,类对象,元类对象](#对象,类对象,元类对象)
+  - [对象一类对象一元类对象](#对象一类对象一元类对象)
   - [消息传递](#消息传递)
   - [消息转发](#消息转发)
-  - [Method-Swizzing](#Method-Swizzing)
+  - [Method一Swizzing](#Method一Swizzing)
   - [动态添加方法](#动态添加方法)
   - [动态方法解析](#动态方法解析)
    
@@ -54,7 +54,7 @@
 - [网络](#网络)
   - [HTTP协议](#HTTP协议)
   - [HTTPS与网络安全](#HTTPS与网络安全)
-  - [TCP、UDP传输层协议](#TCP、UDP传输层协议)
+  - [TCP一UDP传输层协议](#TCP一UDP传输层协议)
   - [DNS解析](#DNS解析)
   
   
@@ -189,7 +189,7 @@
 - GPU
   - 纹理渲染（避免离屏渲染、CPU异步绘制机制减轻GPU压力）
   - 视图混合（减轻层级复杂度）
-#### 绘制原理&异步绘制
+#### 绘制原理一异步绘制
 
 ###### UIView绘制流程
 - 当我们调用[UIView setNeedsDisplay]这个方法时，系统没有立即进行绘制工作，而是立刻调用CALayer的同名方法，并且会在当前layer上打上一个标记，然后会在当前runloop将要结束的时候调用[CALayer display]这个方法，然后进入真正绘制过程
@@ -308,7 +308,7 @@
       - `hash`表
       ![%E5%BC%B1%E5%BC%95%E7%94%A8%E8%A1%A8.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%BC%B1%E5%BC%95%E7%94%A8%E8%A1%A8.png)
 
-#### ARCMRC
+#### ARC与MRC
 
 - MRC
   - **`alloc`**
@@ -795,7 +795,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
   - `const char *types`  返回值+参数1+参数2+....
   - `-(void)aMethod`-->`v@:`-->`void`+`id`+`SEL`
 
-#### **对象,类对象,元类对象**
+#### **对象一类对象一元类对象**
 ![avatar](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E5%AF%B9%E8%B1%A1.png)
 
 #### **消息传递**
@@ -835,7 +835,7 @@ void _objc_set_associative_reference(id object, void *key, id value, uintptr_t p
 - `- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector`和`forwardInvocation`
   - 是否返回方法签名,进而处理
 
-#### **Method-Swizzling**
+#### **Method一Swizzling**
 
 ![交换方法](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/%E6%96%B9%E6%B3%95%E4%BA%A4%E6%8D%A2.png)
 #### **动态添加方法**
