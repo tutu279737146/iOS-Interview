@@ -1163,39 +1163,39 @@ struct __MCBlock__method_block_impl_0 {
 #### 进程和线程
 
 ###### 进程
-- 进程是一个具有一定独立功能的程序关于某次数据集合的一次运行活动，它是操作系统分配资源的基本单元.
-- 进程是指在系统中正在运行的一个应用程序，就是一段程序的执行过程,我们可以理解为手机上的一个app.
-- 每个进程之间是独立的，每个进程均运行在其专用且受保护的内存空间内，拥有独立运行所需的全部资源
+- 进程是一个具有一定独立功能的程序关于某次数据集合的一次运行活动，它是操作系统分配资源的基本单元。
+- 进程是指在系统中正在运行的一个应用程序，就是一段程序的执行过程，我们可以理解为手机上的一个app。
+- 每个进程之间是独立的，每个进程均运行在其专用且受保护的内存空间内，拥有独立运行所需的全部资源。
 
 ###### 线程
-- 程序执行流的最小单元，线程是进程中的一个实体.
-- 一个进程要想执行任务,必须至少有一条线程.应用程序启动的时候，系统会默认开启一条线程,也就是主线程
+- 程序执行流的最小单元，线程是进程中的一个实体。
+- 一个进程要想执行任务，必须至少有一条线程。应用程序启动的时候，系统会默认开启一条线程，也就是主线程。
 
 ###### 关系
-- 线程是进程的执行单元，进程的所有任务都在线程中执行
-- 线程是CPU分配资源和调度的最小单位
-- 一个程序可以对应多个进程(多进程),一个进程中可有多个线程,但至少要有一条线程
-- 同一个进程内的线程共享进程资源
+- 线程是进程的执行单元，进程的所有任务都在线程中执行。
+- 线程是CPU分配资源和调度的最小单位。
+- 一个程序可以对应多个进程(多进程)，一个进程中可有多个线程，但至少要有一条线程。
+- 同一个进程内的线程共享进程资源。
 
 
 ###### 坑
-> 一个进程中可以开启另一个进程吗?
+> 一个进程中可以开启另一个进程吗？
 > 
 
 - WKWebView
 
 #### 任务和队列
 ###### 任务
-> 就是执行操作的意思，也就是在线程中执行的那段代码。在GCD中是放在block中的。执行任务有两种方式：同步执行（sync）和异步执行（async）
+> 就是执行操作的意思，也就是在线程中执行的那段代码；在GCD中是放在block中的；执行任务有两种方式：同步执行（sync）和异步执行（async）
 
 - **同步(Sync)：** 同步添加任务到指定的队列中，在添加的任务执行结束之前，会一直等待，直到队列里面的任务完成之后再继续执行，即会阻塞线程。只能在当前线程中执行任务(是当前线程，不一定是主线程)，不具备开启新线程的能力。
 - **异步(Async)：** 线程会立即返回，无需等待就会继续执行下面的任务，不阻塞当前线程。可以在新的线程中执行任务，具备开启新线程的能力(并不一定开启新线程)。如果不是添加到主队列上，异步会在子线程中执行任务
 
 ###### 队列
-> 队列（DispatchQueue）：这里的队列指执行任务的等待队列，即用来存放任务的队列。队列是一种特殊的线性表，采用FIFO（先进先出）的原则，即新任务总是被插入到队列的末尾，而读取任务的时候总是从队列的头部开始读取。每读取一个任务，则从队列中释放一个任务
+> 队列（DispatchQueue）：这里的队列指执行任务的等待队列，即用来存放任务的队列。队列是一种特殊的线性表，采用FIFO（先进先出）的原则，即新任务总是被插入到队列的末尾，而读取任务的时候总是从队列的头部开始读取。每读取一个任务，则从队列中释放一个任务。
 
-- **串行队列（SerialDispatchQueue）：** 同一时间内，队列中只能执行一个任务，只有当前的任务执行完成之后，才能执行下一个任务。（只开启一个线程，一个任务执行完毕后，再执行下一个任务）。主队列是主线程上的一个串行队列,是系统自动为我们创建的
-- **并发队列（ConcurrentDispatchQueue）：** 同时允许多个任务并发执行。（可以开启多个线程，并且同时执行任务）。并发队列的并发功能只有在异步（dispatch_async）函数下才有效
+- **串行队列（SerialDispatchQueue）：** 同一时间内，队列中只能执行一个任务，只有当前的任务执行完成之后，才能执行下一个任务。（只开启一个线程，一个任务执行完毕后，再执行下一个任务）。主队列是主线程上的一个串行队列，是系统自动为我们创建的。
+- **并发队列（ConcurrentDispatchQueue）：** 同时允许多个任务并发执行（可以开启多个线程，并且同时执行任务）。并发队列的并发功能只有在异步（dispatch_async）函数下才有效。
 ###### 组合
 - 组合1 同步分派任务到串行队列
   > `dispatch_sync(serial_queue,^{//任务})`
@@ -1334,7 +1334,7 @@ struct __MCBlock__method_block_impl_0 {
   }
   ``` 
 **应用**
-- 保证线程同步,异步执行任务转换为同步执行任务
+- 保证线程同步，异步执行任务转换为同步执行任务
   - AFN
   ```
   - (NSArray *)tasksForKeyPath:(NSString *)keyPath {
@@ -1524,12 +1524,12 @@ struct __MCBlock__method_block_impl_0 {
     - isExecuting
     - isFinished
     - isCancelled
-    - 重写了`main`方法,底层控制变更任务执行完成的状态及任务退出状态
-    - 重写了`start`方法,自行控制任务状态
+    - 重写了`main`方法，底层控制变更任务执行完成的状态及任务退出状态
+    - 重写了`start`方法，自行控制任务状态
   - 最大并发量
 
 - 面试题 
-  - 系统是怎么样移除一个isFinished = YES的NSOperation? 通过KVO
+  - 系统是怎么样移除一个isFinished = YES的NSOperation？通过KVO
 #### NSThread
 ###### 启动流程
 - start()
@@ -1579,7 +1579,7 @@ struct __MCBlock__method_block_impl_0 {
 #### 多线程与锁
 
 ###### @synchronized
-- 创建单例对象使用,保证多线程环境下创建的对象是唯一的
+- 创建单例对象使用，保证多线程环境下创建的对象是唯一的
 ###### atomic
 - 属性关键字 对被修饰的对象进行原子操作(不负责使用)
   - @property(atomic)NSMutableArray *arr;
@@ -1587,8 +1587,8 @@ struct __MCBlock__method_block_impl_0 {
   - [self.array addObject:obj]  不可以
 ###### OSSpinLock 
 - 自旋锁
-- 循环等待访问,不释放当前资源
-- 用于轻量级数据访问,例如简单的int值的+1/-1操作,系统源码层面引用计数简单的+1/-1操作
+- 循环等待访问，不释放当前资源
+- 用于轻量级数据访问，例如简单的int值的+1/-1操作，系统源码层面引用计数简单的+1/-1操作
 ###### NSRecursiveLock
 - 互斥锁
 - 当上一个线程的任务没有执行完毕的时候（被锁住），那么下一个线程会进入睡眠状态等待任务执行完毕，当上一个线程的任务执行完毕，下一个线程会自动唤醒然后执行任务。
@@ -1617,14 +1617,14 @@ struct __MCBlock__method_block_impl_0 {
 #### 概念
 > Runloop是通过内部维护的`事件循环`来对`事件/消息进行管理`的一个对象
 > 
-- 没有消息需要处理时,休眠以避免资源占用
+- 没有消息需要处理时，休眠以避免资源占用
   - 用户态 --> 内核态
 
-- 有消息需要处理时,立刻被唤醒
+- 有消息需要处理时，立刻被唤醒
   - 内核态 --> 用户态
 
 #### Runloop数据结构
-> NSRunloop是对CFRunloop的封装,提供了面向对象的API
+> NSRunloop是对CFRunloop的封装，提供了面向对象的API
 > 
 ![Runloop.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/Runloop%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.png)
 ##### CFRunloop
@@ -1647,7 +1647,7 @@ struct __CFRunLoop {
     CFTypeRef _counterpart;
 };
 ```
-- **pthread:** 代表线程,runloop跟线程是一一对应关系
+- **pthread:** 代表线程，runloop跟线程是一一对应关系
 - **currentMode:** CFRunLoopMode数据结构
 - **modes**: 一个包含CFRunLoopMode类型的集合   (NSMutableSet<CFRunLoopMode *>)
 - **commonModes:** 一个包含NSString类型的集合    (NSMutableSet<NSString *>)
@@ -1672,7 +1672,7 @@ struct __CFRunLoopMode {
 
 ```
 - **name:** 模式的名称
-  - 如NSDefaultRunLoopMode,通过这样一个名称来切换对应的模式;
+  - 如NSDefaultRunLoopMode，通过这样一个名称来切换对应的模式；
   - commonModes里面都是名称字符串，通过这些名称来支持多种模式(NSDefaultRunloopMode)
 - **sources0:** 集合类型的数据结构(NSMutableSet)
 - **sources1:** 集合类型的数据结构(NSMutableSet)
@@ -1704,32 +1704,32 @@ struct __CFRunLoopMode {
 ###### void CFRunLoopRun()
 
 ![runloop事件循环](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/Runloop%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF%E6%9C%BA%E5%88%B6.png)
-- 1.即将进入Runloop,发通知
-- 2.将要处理Timer/Source0事件, 发通知
+- 1.即将进入Runloop，发通知
+- 2.将要处理Timer/Source0事件，发通知
 - 3.处理source0事件
-- 4.如果有source1事件处理,goto语句跳转8
-- 5.没事件处理,线程将要休眠,发通知
-- 6.休眠,等待唤醒
+- 4.如果有source1事件处理，goto语句跳转8
+- 5.没事件处理，线程将要休眠，发通知
+- 6.休眠，等待唤醒
   - Source1唤醒
   - Timer事件唤醒
   - 外部手动唤醒
-- 7.线程刚被唤醒,发通知
-- 8.处理唤醒时收到的消息,处理完后回到2
-- 9.即将推出RunLoop,发通知
+- 7.线程刚被唤醒，发通知
+- 8.处理唤醒时收到的消息，处理完后回到2
+- 9.即将推出RunLoop，发通知
 
 
 ##### Runloop的核心
 
 ![runloop核心](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/runloop%E7%9A%84%E6%A0%B8%E5%BF%83.png)
-- `main()`函数经过一系列调用会调用为系统的`mach_msg()`函数,这样就发生了系统调用
-- 经过系统调,当前线程就把控制权交给了内核态,`mach_msg()`函数在一定条件下会返回给调用方,这个触发返回的逻辑就是唤醒线程的逻辑(source1,手动唤醒等)
+- `main()`函数经过一系列调用会调用为系统的`mach_msg()`函数，这样就发生了系统调用
+- 经过系统调，当前线程就把控制权交给了内核态，`mach_msg()`函数在一定条件下会返回给调用方，这个触发返回的逻辑就是唤醒线程的逻辑(source1、手动唤醒等)
 #### Runloop与NSTimer
 ###### 如何将Timer同步到多个Mode中
 
 - void CFRunLoopAddTimer(runLoop,timer,commonMode) ==> void CFRunLoopAddTimer(CFRunLoopRef rl, CFRunLoopTimerRef rlt, CFStringRef modeName)
-  - 通过modeName判断,如果当前是commonMode `(modeName = kCFRunLoopCommonModes)`
+  - 通过modeName判断，如果当前是commonMode `(modeName = kCFRunLoopCommonModes)`
   - 取出传入runloop(rl)的commonModes这个集合 `CFSetRef set = rl->_commonModes`
-  - 同时判断传入runloop(rl)对应的_commonModeItems是否为空,为空时创建
+  - 同时判断传入runloop(rl)对应的_commonModeItems是否为空，为空时创建
   - 然后把timer(rlt)添加到commonModeItems集合中 `CFSetAddValue(rl->_commonModeItems, rlt)`
   - 然后把runloop跟timer封装成一个context `CFTypedef context[2] = {rl, rlt}`
   - 然后对集合set中每一个元素调用 `CFSetApplyFunction(set, (__CFRunLoopAddItemToCommonModes), (void *)context)`
@@ -1738,8 +1738,8 @@ struct __CFRunLoopMode {
   - 取当前mode名称(value) `CFStringRef modeName = (CFStringRef)value`
   - 取当前上下文中的runloop和item
   - 根据item类型判断来决定调用 addSource addObserver还是addTimer
-  - 此时调用addTimer回到上面的方法`CFRunLoopAddTimer(rl, (CFRunloopTimerRef)item, modeName)`,此时的入参modeName已经从commonMode变成了被打上了commonMode标记的一个具体的实际的mode
-  - 在CFRunLoopAddTimer中,才会真正的把timer添加到对应的runloop mode下的timers数组中,这样就实现了多个timer同步到多个mode下
+  - 此时调用addTimer回到上面的方法`CFRunLoopAddTimer(rl, (CFRunloopTimerRef)item, modeName)`，此时的入参modeName已经从commonMode变成了被打上了commonMode标记的一个具体的实际的mode
+  - 在CFRunLoopAddTimer中，才会真正的把timer添加到对应的runloop mode下的timers数组中，这样就实现了多个timer同步到多个mode下
 
 #### Runloop与多线程
 ###### 关系
