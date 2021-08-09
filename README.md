@@ -322,11 +322,11 @@
     - **`SideTable &table = SideTables()[this]`** //通过当前对象的指针,通过hash函数计算在SideTables找到对应的sizeTable
     - **`RefcountMap::iterator it = table.fefcnts.find(this)`**
     - **`refcntStorage -= SIDE_TABLE_RC_ONE`**
-  - **`retainCount`****
+  - **`retainCount`**
     - **`SideTable & t**able = SideTables()[this]` **
-    - **`sizt_t refcnt_result = 1`****
+    - **`sizt_t refcnt_result = 1`**
     - **`RefcountMap::iterator it = table.fefcnts.find(this)`**
-    - **`refcnt_result += it->secont >> SIDE_TABLE_RC_SHIFT`
+    - **`refcnt_result += it->secont >> SIDE_TABLE_RC_SHIFT`**
   - **`dealloc`**
 
     ![dealloc.png](https://raw.githubusercontent.com/tutu279737146/BlogImages/master/Images/dealloc.png)
