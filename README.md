@@ -323,7 +323,7 @@
     - **`RefcountMap::iterator it = table.fefcnts.find(this)`**
     - **`refcntStorage -= SIDE_TABLE_RC_ONE`**
   - **`retainCount`**
-    - **`SideTable & t*able = SideTables()[this]` **
+    - **`SideTable &table = SideTables()[this]` **
     - **`sizt_t refcnt_result = 1`**
     - **`RefcountMap::iterator it = table.fefcnts.find(this)`**
     - **`refcnt_result += it->secont >> SIDE_TABLE_RC_SHIFT`**
