@@ -1579,6 +1579,56 @@ struct __MCBlock__method_block_impl_0 {
 
 #### 多线程与锁
 
+##### 互斥锁
+- 防止俩条线程同时对同一公共资源进行读写机制
+- 获取锁失败时,线程会进入睡眠,等待锁释放时被唤醒
+- 分为递归锁和非递归锁
+  - 递归锁: 可重入锁 同一个线程在锁释放之前可以再次获取锁
+  - 非递归: 不可重入,必须等锁释放后才能再次获取锁
+
+##### 自旋锁
+- 线程反复检查锁变量是否可用,由于线程在这一过程中一直保持执行,所以是一种忙等的锁
+- 线程一旦获取自旋锁就会一直保持该锁,直到显式释放自旋锁
+- 避免了进程的上下文调度开销,适用于阻塞很短时间线程的场合
+###### atomic
+- set get方法会有atomic判断 spinlock_t保证堆属性的读写安全
+  ```
+    void objc_setProperty_atomic(id self, SEL _cmd, id newValue, ptrdiff_t offset)
+  {
+      reallySetProperty(self, _cmd, newValue, offset, true, false, false);
+  }
+  static inline void reallySetProperty(id self, SEL _cmd, id newValue, ptrdiff_t offset, bool atomic, bool copy, bool mutableCopy)
+  {
+      // ...
+
+      if (!atomic) {
+          // 不是 atomic 修饰
+          oldValue = *slot;
+          *slot = newValue;
+      } else {
+          // 如果是 atomic 修饰，加一把同步锁，保证 setter 的安全
+          spinlock_t& slotlock = PropertyLocks[slot];
+          slotlock.lock();
+          oldValue = *slot;
+          *slot = newValue;        
+          slotlock.unlock();
+      }
+  }
+
+  id objc_getProperty(id self, SEL _cmd, ptrdiff_t offset, BOOL atomic) {
+      // ...
+
+      // 非原子属性，直接返回值
+      if (!atomic) return *slot;
+      // 原子属性，加同步锁，保证 getter 的安全
+      spinlock_t& slotlock = PropertyLocks[slot];
+      slotlock.lock();
+      id value = objc_retain(*slot);
+      slotlock.unlock();
+  }
+
+  ```
+
 ###### @synchronized
 - 创建单例对象使用，保证多线程环境下创建的对象是唯一的
 ###### atomic
@@ -1590,6 +1640,7 @@ struct __MCBlock__method_block_impl_0 {
 - 自旋锁
 - 循环等待访问，不释放当前资源
 - 用于轻量级数据访问，例如简单的int值的+1/-1操作，系统源码层面引用计数简单的+1/-1操作
+- 造成任务优先级反转
 ###### NSRecursiveLock
 - 互斥锁
 - 当上一个线程的任务没有执行完毕的时候（被锁住），那么下一个线程会进入睡眠状态等待任务执行完毕，当上一个线程的任务执行完毕，下一个线程会自动唤醒然后执行任务。
