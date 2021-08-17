@@ -1229,6 +1229,25 @@ struct __MCBlock__method_block_impl_0 {
     }
     // 正常运行
     ```
+    ```
+    /// 在主线程中执行这句代码
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        NSLog(@"这里死锁了");
+    });
+
+
+    /// 在哪里执行都可以
+    dispatch_queue_t theSerialQueue = dispatch_queue_create("我是个串行队列", DISPATCH_QUEUE_SERIAL);
+    dispatch_async(theSerialQueue, ^{ /// 正在执行任务，同步异步无所谓
+        NSLog(@"第一层");
+
+        /// 同一个串行队列
+        dispatch_sync(theSerialQueue, ^{
+            NSLog(@"第二层");
+
+        });
+    });
+    ```
 - 组合2 异步分派任务到串行队列
   > `dispatch_async(serial_queue,^{//任务})`
 
