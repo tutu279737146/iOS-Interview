@@ -2938,3 +2938,1689 @@ if (cachedImage && options & SDWebImageRefreshCached) {
 
 - 图片下载完成后并解码后回调；下载任务就完成了，下载任务完成后，先存储到内存缓存
   再存储到磁盘中（缓存路径：用图片的下载链接生成 MD5 串, 作为图片缓存的路径）。
+  
+  
+  
+
+# 算法
+
+- 算法
+    - 求和
+        - 俩数之和
+
+            ```python
+            class Solution:
+                def twoSum(self, nums: List[int], target: int) -> List[int]:
+                    hashmap={}
+                    for ind,num in enumerate(nums):
+                        hashmap[num] = ind
+                    for i,num in enumerate(nums):
+                        j = hashmap.get(target - num)
+                        if j is not None and i!=j:
+                            return [i,j]
+            ```
+
+        - 三数之和
+
+            ```python
+            class Solution:
+                def threeSum(self, nums):
+                    ans = []
+                    n = len(nums)
+                    nums.sort()
+                    for i in range(n):
+                        left = i + 1
+                        right = n - 1
+                        if nums[i] > 0:
+                            break
+                        if i >= 1 and nums[i] == nums[i - 1]:
+                            continue
+                        while left < right:
+                            total = nums[i] + nums[left] + nums[right]
+                            if total > 0:
+                                right -= 1
+                            elif total < 0:
+                                left += 1
+                            else:
+                                ans.append([nums[i], nums[left], nums[right]])
+                                while left != right and nums[left] == nums[left + 1]: left += 1
+                                while left != right and nums[right] == nums[right - 1]: right -= 1
+                                left += 1
+                                right -= 1
+                    return ans
+            ```
+
+        - 四树之和
+
+            ```python
+            	# 双指针法
+            class Solution:
+                def fourSum(self, nums: List[int], target: int) -> List[List[int]]:
+                    
+                    nums.sort()
+                    n = len(nums)
+                    res = []
+                    for i in range(n):
+                        if i > 0 and nums[i] == nums[i - 1]: continue
+                        for k in range(i+1, n):
+                            if k > i + 1 and nums[k] == nums[k-1]: continue
+                            p = k + 1
+                            q = n - 1
+
+                            while p < q:
+                                if nums[i] + nums[k] + nums[p] + nums[q] > target: q -= 1
+                                elif nums[i] + nums[k] + nums[p] + nums[q] < target: p += 1
+                                else:
+                                    res.append([nums[i], nums[k], nums[p], nums[q]])
+                                    while p < q and nums[p] == nums[p + 1]: p += 1
+                                    while p < q and nums[q] == nums[q - 1]: q -= 1
+                                    p += 1
+                                    q -= 1
+                    return res
+
+            # 哈希表法
+            class Solution(object):
+                def fourSum(self, nums, target):
+                    """
+                    :type nums: List[int]
+                    :type target: int
+                    :rtype: List[List[int]]
+                    """
+                    # use a dict to store value:showtimes
+                    hashmap = dict()
+                    for n in nums:
+                        if n in hashmap:
+                            hashmap[n] += 1
+                        else: 
+                            hashmap[n] = 1
+                    
+                    # good thing about using python is you can use set to drop duplicates.
+                    ans = set()
+                    for i in range(len(nums)):
+                        for j in range(i + 1, len(nums)):
+                            for k in range(j + 1, len(nums)):
+                                val = target - (nums[i] + nums[j] + nums[k])
+                                if val in hashmap:
+                                    # make sure no duplicates.
+                                    count = (nums[i] == val) + (nums[j] == val) + (nums[k] == val)
+                                    if hashmap[val] > count:
+                                        ans.add(tuple(sorted([nums[i], nums[j], nums[k], val])))
+                                else:
+                                    continue
+                    return ans
+            ```
+
+    - 数组
+        - 二分查找
+
+            ```python
+            class Solution:
+                def search(self, nums: List[int], target: int) -> int:
+                    left, right = 0, len(nums) - 1
+                    
+                    while left <= right:
+                        middle = (left + right) // 2
+
+                        if nums[middle] < target:
+                            left = middle + 1
+                        elif nums[middle] > target:
+                            right = middle - 1
+                        else:
+                            return middle
+                    return -1
+            ```
+
+        - 移除元素
+
+            ```python
+            class Solution:
+                """双指针法
+                时间复杂度：O(n)
+                空间复杂度：O(1)
+                """
+
+                @classmethod
+                def removeElement(cls, nums: List[int], val: int) -> int:
+                    fast = slow = 0
+
+                    while fast < len(nums):
+
+                        if nums[fast] != val:
+                            nums[slow] = nums[fast]
+                            slow += 1
+
+                        # 当 fast 指针遇到要删除的元素时停止赋值
+                        # slow 指针停止移动, fast 指针继续前进
+                        fast += 1
+
+                    return slow
+            ```
+
+        - 数组平方
+
+            ```python
+            class Solution:
+                """双指针法
+                时间复杂度：O(n)
+                """
+                def sortedSquares(self, nums: List[int]) -> List[int]:
+                    n = len(nums)
+                    i,j,k = 0,n - 1,n - 1
+                    ans = [-1] * n
+                    while i <= j:
+                        lm = nums[i] ** 2
+                        rm = nums[j] ** 2
+                        if lm > rm:
+                            ans[k] = lm
+                            i += 1
+                        else:
+                            ans[k] = rm
+                            j -= 1
+                        k -= 1
+                    return ans
+            ```
+
+        - 长度最小子数组
+
+            ```python
+            class Solution:
+                """滑动窗口
+                时间复杂度：O(n)
+                """
+                def minSubArrayLen(self, s: int, nums: List[int]) -> int:
+                    # 定义一个无限大的数
+                    res = float("inf")
+                    Sum = 0
+                    index = 0
+                    for i in range(len(nums)):
+                        Sum += nums[i]
+                        while Sum >= s:
+                            res = min(res, i-index+1)
+                            Sum -= nums[index]
+                            index += 1
+                    return 0 if res==float("inf") else res
+            ```
+
+        - 螺旋矩阵
+
+            ```python
+            class Solution:
+
+                def generateMatrix(self, n: int) -> List[List[int]]:
+                    # 初始化要填充的正方形
+                    matrix = [[0] * n for _ in range(n)]
+
+                    left, right, up, down = 0, n - 1, 0, n - 1
+                    number = 1  # 要填充的数字
+
+                    while left < right and up < down:
+
+                        # 从左到右填充上边
+                        for x in range(left, right):
+                            matrix[up][x] = number
+                            number += 1
+
+                        # 从上到下填充右边
+                        for y in range(up, down):
+                            matrix[y][right] = number
+                            number += 1
+
+                        # 从右到左填充下边
+                        for x in range(right, left, -1):
+                            matrix[down][x] = number
+                            number += 1
+
+                        # 从下到上填充左边
+                        for y in range(down, up, -1):
+                            matrix[y][left] = number
+                            number += 1
+
+                        # 缩小要填充的范围
+                        left += 1
+                        right -= 1
+                        up += 1
+                        down -= 1
+
+                    # 如果阶数为奇数，额外填充一次中心
+                    if n % 2:
+                        matrix[n // 2][n // 2] = number
+
+                    return matrix
+            ```
+
+    - 字符串
+        - 翻转字符串1
+
+            ```python
+            class Solution:
+                def reverseString(self, s: List[str]) -> None:
+                    """
+                    Do not return anything, modify s in-place instead.
+                    """
+                    left, right = 0, len(s) - 1
+                    
+                    # 该方法已经不需要判断奇偶数，经测试后时间空间复杂度比用 for i in range(right//2)更低
+                    # 推荐该写法，更加通俗易懂
+                    while left < right:
+                        s[left], s[right] = s[right], s[left]
+                        left += 1
+                        right -= 1
+            ```
+
+        - 翻转字符串2
+
+            ```python
+            class Solution:
+                def reverseStr(self, s: str, k: int) -> str:
+                    """
+                    1. 使用range(start, end, step)来确定需要调换的初始位置
+                    2. 对于字符串s = 'abc'，如果使用s[0:999] ===> 'abc'。字符串末尾如果超过最大长度，则会返回至字符串最后一个值，这个特性可以避免一些边界条件的处理。
+                    3. 用切片整体替换，而不是一个个替换.
+                    """
+                    def reverse_substring(text):
+                        left, right = 0, len(text) - 1
+                        while left < right:
+                            text[left], text[right] = text[right], text[left]
+                            left += 1
+                            right -= 1
+                        return text
+                    
+                    res = list(s)
+
+                    for cur in range(0, len(s), 2 * k):
+                        res[cur: cur + k] = reverse_substring(res[cur: cur + k])
+                    
+                    return ''.join(res)
+            ```
+
+        - 替换空格
+
+            ```python
+            # 时间 O(n) 空间O(1)
+
+            class Solution:
+                def replaceSpace(self, s: str) -> str:
+                    counter = s.count(' ')
+                    
+                    res = list(s)
+                    # 每碰到一个空格就多拓展两个格子，1 + 2 = 3个位置存’%20‘
+                    res.extend([' '] * counter * 2)
+                    
+                    # 原始字符串的末尾，拓展后的末尾
+                    left, right = len(s) - 1, len(res) - 1
+                    
+                    while left >= 0:
+                        if res[left] != ' ':
+                            res[right] = res[left]
+                            right -= 1
+                        else:
+                            # [right - 2, right), 左闭右开
+                            res[right - 2: right + 1] = '%20'
+                            right -= 3
+                        left -= 1
+                    return ''.join(res)
+            ```
+
+        - 翻转单词
+
+            ```python
+            class Solution:
+              #1.去除多余的空格
+                    def trim_spaces(self,s):     
+                        n=len(s)
+                        left=0
+                        right=n-1
+                    
+                        while left<=right and s[left]==' ':       #去除开头的空格
+                            left+=1
+                        while left<=right and s[right]==' ':        #去除结尾的空格
+                            right=right-1
+                        tmp=[]
+                        while left<=right:                                    #去除单词中间多余的空格
+                            if s[left]!=' ':
+                                tmp.append(s[left])
+                            elif tmp[-1]!=' ':                                  #当前位置是空格，但是相邻的上一个位置不是空格，则该空格是合理的
+                                tmp.append(s[left])
+                            left+=1
+                        return tmp
+            #2.翻转字符数组
+                    def reverse_string(self,nums,left,right):
+                        while left<right:
+                            nums[left], nums[right]=nums[right],nums[left]
+                            left+=1
+                            right-=1
+                        return None
+            #3.翻转每个单词
+                    def reverse_each_word(self, nums):
+                        start=0
+                        end=0
+                        n=len(nums)
+                        while start<n:
+                            while end<n and nums[end]!=' ':
+                                end+=1
+                            self.reverse_string(nums,start,end-1)
+                            start=end+1
+                            end+=1
+                        return None
+
+            #4.翻转字符串里的单词
+                    def reverseWords(self, s): #测试用例："the sky is blue"
+                        l = self.trim_spaces(s)                     #输出：['t', 'h', 'e', ' ', 's', 'k', 'y', ' ', 'i', 's', ' ', 'b', 'l', 'u', 'e'
+                        self.reverse_string( l,  0, len(l) - 1)   #输出：['e', 'u', 'l', 'b', ' ', 's', 'i', ' ', 'y', 'k', 's', ' ', 'e', 'h', 't']
+                        self.reverse_each_word(l)               #输出：['b', 'l', 'u', 'e', ' ', 'i', 's', ' ', 's', 'k', 'y', ' ', 't', 'h', 'e']
+                        return ''.join(l)                                 #输出：blue is sky the
+            ```
+
+        - 左旋转字符串
+
+            ```python
+            # 方法一：可以使用切片方法
+            class Solution:
+                def reverseLeftWords(self, s: str, n: int) -> str:
+                    return s[n:] + s[0:n]
+            # 方法二：也可以使用上文描述的方法，有些面试中不允许使用切片，那就使用上文作者提到的方法
+            class Solution:
+                def reverseLeftWords(self, s: str, n: int) -> str:
+                    s = list(s)
+                    s[0:n] = list(reversed(s[0:n]))
+                    s[n:] = list(reversed(s[n:]))
+                    s.reverse()
+                    
+                    return "".join(s)
+            # 方法三：如果连reversed也不让使用，那么自己手写一个
+            class Solution:
+                def reverseLeftWords(self, s: str, n: int) -> str:
+                    def reverse_sub(lst, left, right):
+                        while left < right:
+                            lst[left], lst[right] = lst[right], lst[left]
+                            left += 1
+                            right -= 1
+                    
+                    res = list(s)
+                    end = len(res) - 1
+                    reverse_sub(res, 0, n - 1)
+                    reverse_sub(res, n, end)
+                    reverse_sub(res, 0, end)
+                    return ''.join(res)
+
+            # 同方法二
+            # 时间复杂度：O(n)
+            # 空间复杂度：O(n)，python的string为不可变，需要开辟同样大小的list空间来修改
+
+            #方法四：考虑不能用切片的情况下，利用模+下标实现
+            class Solution:
+                def reverseLeftWords(self, s: str, n: int) -> str:
+                    new_s = ''
+                    for i in range(len(s)):
+                        j = (i+n)%len(s)
+                        new_s = new_s + s[j]
+                    return new_s
+            ```
+
+        - KMP
+            - 
+
+            ```python
+            #时间 O(n+m)
+            // 方法一
+            class Solution:
+                def strStr(self, haystack: str, needle: str) -> int:
+                    a=len(needle)
+                    b=len(haystack)
+                    if a==0:
+                        return 0
+                    next=self.getnext(a,needle)
+                    p=-1
+                    for j in range(b):
+                        while p>=0 and needle[p+1]!=haystack[j]:
+                            p=next[p]
+                        if needle[p+1]==haystack[j]:
+                            p+=1
+                        if p==a-1:
+                            return j-a+1
+                    return -1
+
+                def getnext(self,a,needle):
+                    next=['' for i in range(a)]
+                    k=-1
+                    next[0]=k
+                    for i in range(1,len(needle)):
+                        while (k>-1 and needle[k+1]!=needle[i]):
+                            k=next[k]
+                        if needle[k+1]==needle[i]:
+                            k+=1
+                        next[i]=k
+                    return next
+            // 方法二
+            class Solution:
+                def strStr(self, haystack: str, needle: str) -> int:
+                    a=len(needle)
+                    b=len(haystack)
+                    if a==0:
+                        return 0
+                    i=j=0
+                    next=self.getnext(a,needle)
+                    while(i<b and j<a):
+                        if j==-1 or needle[j]==haystack[i]:
+                            i+=1
+                            j+=1
+                        else:
+                            j=next[j]
+                    if j==a:
+                        return i-j
+                    else:
+                        return -1
+
+                def getnext(self,a,needle):
+                    next=['' for i in range(a)]
+                    j,k=0,-1
+                    next[0]=k
+                    while(j<a-1):
+                        if k==-1 or needle[k]==needle[j]:
+                            k+=1
+                            j+=1
+                            next[j]=k
+                        else:
+                            k=next[k]
+                    return next
+            ```
+
+        - 重复子字符串
+
+            ```python
+            class Solution:
+                def repeatedSubstringPattern(self, s: str) -> bool:  
+                    if len(s) == 0:
+                        return False
+                    nxt = [0] * len(s)
+                    self.getNext(nxt, s)
+                    if nxt[-1] != -1 and len(s) % (len(s) - (nxt[-1] + 1)) == 0:
+                        return True
+                    return False
+                
+                def getNext(self, nxt, s):
+                    nxt[0] = -1
+                    j = -1
+                    for i in range(1, len(s)):
+                        while j >= 0 and s[i] != s[j+1]:
+                            j = nxt[j]
+                        if s[i] == s[j+1]:
+                            j += 1
+                        nxt[i] = j
+                    return nxt
+
+            class Solution:
+                def repeatedSubstringPattern(self, s: str) -> bool:  
+                    if len(s) == 0:
+                        return False
+                    nxt = [0] * len(s)
+                    self.getNext(nxt, s)
+                    if nxt[-1] != 0 and len(s) % (len(s) - nxt[-1]) == 0:
+                        return True
+                    return False
+                
+                def getNext(self, nxt, s):
+                    nxt[0] = 0
+                    j = 0
+                    for i in range(1, len(s)):
+                        while j > 0 and s[i] != s[j]:
+                            j = nxt[j - 1]
+                        if s[i] == s[j]:
+                            j += 1
+                        nxt[i] = j
+                    return nxt
+            ```
+
+    - 链表
+        - 移除链表元素(头插法 t0(n),s0(1))
+
+            ```python
+            # Definition for singly-linked list.
+            # class ListNode:
+            #     def __init__(self, val=0, next=None):
+            #         self.val = val
+            #         self.next = next
+            class Solution:
+                def removeElements(self, head: ListNode, val: int) -> ListNode:
+                    dummy_head = ListNode(next=head) #添加一个虚拟节点
+                    cur = dummy_head
+                    while(cur.next!=None):
+                        if(cur.next.val == val):
+                            cur.next = cur.next.next #删除cur.next节点
+                        else:
+                            cur = cur.next
+                    return dummy_head.next
+            ```
+
+        - 翻转链表1
+
+            ```python
+            #双指针 迭代
+            # Definition for singly-linked list.
+            # class ListNode:
+            #     def __init__(self, val=0, next=None):
+            #         self.val = val
+            #         self.next = next
+            class Solution:
+                def reverseList(self, head: ListNode) -> ListNode:
+                    cur = head   
+                    pre = None
+                    while(cur!=None):
+                        temp = cur.next # 保存一下 cur的下一个节点，因为接下来要改变cur->next
+                        cur.next = pre #反转
+                        #更新pre、cur指针
+                        pre = cur
+                        cur = temp
+                    return pre
+
+            # 递归
+            # Definition for singly-linked list.
+            # class ListNode:
+            #     def __init__(self, val=0, next=None):
+            #         self.val = val
+            #         self.next = next
+            class Solution:
+                def reverseList(self, head: ListNode) -> ListNode:
+                    
+                    def reverse(pre,cur):
+                        if not cur:
+                            return pre
+                            
+                        tmp = cur.next
+                        cur.next = pre
+
+                        return reverse(cur,tmp)
+                    
+                    return reverse(None,head)
+            ```
+
+        - 翻转链表2
+
+            ```python
+            # Definition for singly-linked list.
+            # class ListNode:
+            #     def __init__(self, val=0, next=None):
+            #         self.val = val
+            #         self.next = next
+
+            # 时间 O(n) 空间O(1)
+            class Solution:
+                def swapPairs(self, head: ListNode) -> ListNode:
+                    res = ListNode(next=head)
+                    pre = res
+                    
+                    # 必须有pre的下一个和下下个才能交换，否则说明已经交换结束了
+                    while pre.next and pre.next.next:
+                        cur = pre.next
+                        post = pre.next.next
+                        
+                        # pre，cur，post对应最左，中间的，最右边的节点
+                        cur.next = post.next
+                        post.next = cur
+                        pre.next = post
+
+                        pre = pre.next.next
+                    return res.next
+            ```
+
+        - 删除倒数N节点
+
+            ```python
+            # Definition for singly-linked list.
+            # class ListNode:
+            #     def __init__(self, val=0, next=None):
+            #         self.val = val
+            #         self.next = next
+            class Solution:
+                def removeNthFromEnd(self, head: ListNode, n: int) -> ListNode:
+                    head_dummy = ListNode()
+                    head_dummy.next = head
+
+                    slow, fast = head_dummy, head_dummy
+                    while(n!=0): #fast先往前走n步
+                        fast = fast.next
+                        n -= 1
+                    while(fast.next!=None):
+                        slow = slow.next
+                        fast = fast.next
+                    #fast 走到结尾后，slow的下一个节点为倒数第N个节点
+                    slow.next = slow.next.next #删除
+                    return head_dummy.next
+            ```
+
+        - 链表相交
+
+            ```python
+            # Definition for singly-linked list.
+            # class ListNode:
+            #     def __init__(self, x):
+            #         self.val = x
+            #         self.next = None
+
+            class Solution:
+                def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> ListNode:
+                    """
+                    根据快慢法则，走的快的一定会追上走得慢的。
+                    在这道题里，有的链表短，他走完了就去走另一条链表，我们可以理解为走的快的指针。
+
+                    那么，只要其中一个链表走完了，就去走另一条链表的路。如果有交点，他们最终一定会在同一个
+                    位置相遇
+                    """
+                    cur_a, cur_b = headA, headB     # 用两个指针代替a和b
+
+                    
+                    while cur_a != cur_b:
+                        cur_a = cur_a.next if cur_a else headB      # 如果a走完了，那么就切换到b走
+                        cur_b = cur_b.next if cur_b else headA      # 同理，b走完了就切换到a
+                    
+                    return cur_a
+            ```
+
+        - 环入口
+
+            ```python
+            class Solution:
+                def detectCycle(self, head: ListNode) -> ListNode:
+                    slow, fast = head, head
+                    while fast and fast.next:
+                        slow = slow.next
+                        fast = fast.next.next
+                        # 如果相遇
+                        if slow == fast:
+                            p = head
+                            q = slow
+                            while p!=q:
+                                p = p.next
+                                q = q.next
+                            #你也可以return q
+                            return p
+
+                    return None
+            ```
+
+    - 二叉树
+        - 递归遍历
+
+        ```python
+        # 前序遍历-递归-LC144_二叉树的前序遍历
+        class Solution:
+            def preorderTraversal(self, root: TreeNode) -> List[int]:
+                # 保存结果
+                result = []
+                
+                def traversal(root: TreeNode):
+                    if root == None:
+                        return
+                    result.append(root.val) # 前序
+                    traversal(root.left)    # 左
+                    traversal(root.right)   # 右
+
+                traversal(root)
+                return result
+
+        # 中序遍历-递归-LC94_二叉树的中序遍历
+        class Solution:
+            def inorderTraversal(self, root: TreeNode) -> List[int]:
+                result = []
+
+                def traversal(root: TreeNode):
+                    if root == None:
+                        return
+                    traversal(root.left)    # 左
+                    result.append(root.val) # 中序
+                    traversal(root.right)   # 右
+
+                traversal(root)
+                return result
+
+        # 后序遍历-递归-LC145_二叉树的后序遍历
+        class Solution:
+            def postorderTraversal(self, root: TreeNode) -> List[int]:
+                result = []
+
+                def traversal(root: TreeNode):
+                    if root == None:
+                        return
+                    traversal(root.left)    # 左
+                    traversal(root.right)   # 右
+                    result.append(root.val) # 后序
+
+                traversal(root)
+                return result
+        ```
+
+    - 迭代遍历
+
+        ```python
+        # 前序遍历-迭代-LC144_二叉树的前序遍历
+        class Solution:
+            def preorderTraversal(self, root: TreeNode) -> List[int]:
+                # 根结点为空则返回空列表
+                if not root:
+                    return []
+                stack = [root]
+                result = []
+                while stack:
+                    node = stack.pop()
+                    # 中结点先处理
+                    result.append(node.val)
+                    # 右孩子先入栈
+                    if node.right:
+                        stack.append(node.right)
+                    # 左孩子后入栈
+                    if node.left:
+                        stack.append(node.left)
+                return result
+                
+        # 中序遍历-迭代-LC94_二叉树的中序遍历
+        class Solution:
+            def inorderTraversal(self, root: TreeNode) -> List[int]:
+                if not root:
+                    return []
+                stack = []  # 不能提前将root结点加入stack中
+                result = []
+                cur = root
+                while cur or stack:
+                    # 先迭代访问最底层的左子树结点
+                    if cur:     
+                        stack.append(cur)
+                        cur = cur.left		
+                    # 到达最左结点后处理栈顶结点    
+                    else:		
+                        cur = stack.pop()
+                        result.append(cur.val)
+                        # 取栈顶元素右结点
+                        cur = cur.right	
+                return result
+                
+        # 后序遍历-迭代-LC145_二叉树的后序遍历
+        class Solution:
+            def postorderTraversal(self, root: TreeNode) -> List[int]:
+                if not root:
+                    return []
+                stack = [root]
+                result = []
+                while stack:
+                    node = stack.pop()
+                    # 中结点先处理
+                    result.append(node.val)
+                    # 左孩子先入栈
+                    if node.left:
+                        stack.append(node.left)
+                    # 右孩子后入栈
+                    if node.right:
+                        stack.append(node.right)
+                # 将最终的数组翻转
+                return result[::-1]
+        ```
+
+    - 层序遍历1
+
+        ```python
+        class Solution:
+            def levelOrder(self, root: TreeNode) -> List[List[int]]:
+                if not root:
+                    return []
+
+                queue = [root]
+                out_list = []
+
+                while queue:
+                    length = len(queue)  
+                    in_list = []
+                    for _ in range(length):
+                        curnode = queue.pop(0)  # （默认移除列表最后一个元素）这里需要移除队列最头上的那个
+                        in_list.append(curnode.val)
+                        if curnode.left: queue.append(curnode.left)
+                        if curnode.right: queue.append(curnode.right)
+                    out_list.append(in_list)
+
+                return out_list
+        ```
+
+    - 层序遍历2
+
+        ```python
+        class Solution:
+            def levelOrderBottom(self, root: TreeNode) -> List[List[int]]:
+                if not root:
+                    return []
+                quene = [root]
+                out_list = []
+                
+                while quene:
+                    in_list = []
+                    for _ in range(len(quene)):
+                        node = quene.pop(0)
+                        in_list.append(node.val)
+                        if node.left:
+                            quene.append(node.left)
+                        if node.right:
+                            quene.append(node.right)
+         
+                    out_list.append(in_list)
+            
+                out_list.reverse()
+                return out_list
+            
+        # 执行用时：36 ms, 在所有 Python3 提交中击败了92.00%的用户
+        # 内存消耗：15.2 MB, 在所有 Python3 提交中击败了63.76%的用户
+        ```
+
+    - 二叉树右视图
+
+        ```python
+        class Solution:
+            def rightSideView(self, root: TreeNode) -> List[int]:
+                if not root:
+                    return []
+                
+                # deque来自collections模块，不在力扣平台时，需要手动写入
+                # 'from collections import deque' 导入
+                # deque相比list的好处是，list的pop(0)是O(n)复杂度，deque的popleft()是O(1)复杂度
+
+                quene = deque([root])
+                out_list = []
+
+                while quene:
+                    # 每次都取最后一个node就可以了
+                    node = quene[-1]
+                    out_list.append(node.val)
+
+                    # 执行这个遍历的目的是获取下一层所有的node
+                    for _ in range(len(quene)):
+                        node = quene.popleft()
+                        if node.left:
+                            quene.append(node.left)
+                        if node.right:
+                            quene.append(node.right)
+                
+                return out_list
+            
+        # 执行用时：36 ms, 在所有 Python3 提交中击败了89.47%的用户
+        # 内存消耗：14.6 MB, 在所有 Python3 提交中击败了96.65%的用户
+        ```
+
+    - 二叉树层平均值
+
+        ```python
+        class Solution:
+            def averageOfLevels(self, root: TreeNode) -> List[float]:
+                if not root:
+                    return []
+                
+                quene = deque([root])
+                out_list = []
+
+                while quene:
+                    in_list = []
+
+                    for _ in range(len(quene)):
+                        node = quene.popleft()
+                        in_list.append(node.val)
+                        if node.left:
+                            quene.append(node.left)
+                        if node.right:
+                            quene.append(node.right)
+
+                    out_list.append(in_list)
+
+                out_list = map(lambda x: sum(x) / len(x), out_list)
+            
+                return out_list
+                
+        # 执行用时：56 ms, 在所有 Python3 提交中击败了81.48%的用户
+        # 内存消耗：17 MB, 在所有 Python3 提交中击败了89.68%的用户
+        ```
+
+    - N叉树层序遍历
+
+        ```python
+        class Solution:
+            def levelOrder(self, root: 'Node') -> List[List[int]]:
+                if not root:
+                    return []
+                
+                quene = deque([root])
+                out_list = []
+
+                while quene:
+                    in_list = []
+
+                    for _ in range(len(quene)):
+                        node = quene.popleft()
+                        in_list.append(node.val)
+                        if node.children:
+                            # 这个地方要用extend而不是append，我们看下面的例子：
+                            # In [18]: alist=[]
+                            # In [19]: alist.append([1,2,3])
+                            # In [20]: alist
+                            # Out[20]: [[1, 2, 3]]
+                            # In [21]: alist.extend([4,5,6])
+                            # In [22]: alist
+                            # Out[22]: [[1, 2, 3], 4, 5, 6]
+                            # 可以看到extend对要添加的list进行了一个解包操作
+                            # print(root.children)，可以得到children是一个包含
+                            # 孩子节点地址的list，我们使用for遍历quene的时候，
+                            # 希望quene是一个单层list，所以要用extend
+                            # 使用extend的情况，如果print(quene),结果是
+                            # deque([<__main__.Node object at 0x7f60763ae0a0>])
+        				   # deque([<__main__.Node object at 0x7f607636e6d0>, <__main__.Node object at 0x7f607636e130>, <__main__.Node object at 0x7f607636e310>])
+        				  # deque([<__main__.Node object at 0x7f607636e880>, <__main__.Node object at 0x7f607636ef10>])
+        				  # 可以看到是单层list
+                            # 如果使用append，print(quene)的结果是
+                            # deque([<__main__.Node object at 0x7f18907530a0>])
+        				  # deque([[<__main__.Node object at 0x7f18907136d0>, <__main__.Node object at 0x7f1890713130>, <__main__.Node object at 0x7f1890713310>]])
+        				  # 可以看到是两层list，这样for的遍历就会报错
+                            
+                            quene.extend(node.children)
+                        
+                    out_list.append(in_list)
+                
+                return out_list
+            
+        # 执行用时：60 ms, 在所有 Python3 提交中击败了76.99%的用户
+        # 内存消耗：16.5 MB, 在所有 Python3 提交中击败了89.19%的用户
+        ```
+
+    - 每个树找最大值
+
+        ```python
+        class Solution:
+            def largestValues(self, root: TreeNode) -> List[int]:
+                if root is None:
+                    return []
+                queue = [root]
+                out_list = []
+                while queue:
+                    length = len(queue)
+                    in_list = []
+                    for _ in range(length):
+                        curnode = queue.pop(0)
+                        in_list.append(curnode.val)
+                        if curnode.left: queue.append(curnode.left)
+                        if curnode.right: queue.append(curnode.right)
+                    out_list.append(max(in_list))
+                return out_list
+        ```
+
+    - 填充每个节点的下一个右侧节点指针1
+
+        ```python
+        # 层序遍历解法
+        class Solution:
+            def connect(self, root: 'Node') -> 'Node':
+                if not root:
+                    return None
+                queue = [root]
+                while queue:
+                    n = len(queue)
+                    for i in range(n):
+                        node = queue.pop(0)
+                        if node.left:
+                            queue.append(node.left)
+                        if node.right:
+                            queue.append(node.right)
+                        if i == n - 1:
+                            break
+                        node.next = queue[0]
+                return root
+
+        # 链表解法
+        class Solution:
+            def connect(self, root: 'Node') -> 'Node':
+                first = root
+                while first:
+                    cur = first
+                    while cur:  # 遍历每一层的节点
+                        if cur.left: cur.left.next = cur.right  # 找左节点的next
+                        if cur.right and cur.next: cur.right.next = cur.next.left  # 找右节点的next
+                        cur = cur.next # cur同层移动到下一节点
+                    first = first.left  # 从本层扩展到下一层
+                return root
+        ```
+
+    - 填充每个节点的下一个右侧节点指针2
+
+        ```python
+        # 层序遍历解法
+        class Solution:
+            def connect(self, root: 'Node') -> 'Node':
+                if not root:
+                    return None
+                queue = [root]
+                while queue:  # 遍历每一层
+                    length = len(queue)
+                    tail = None # 每一层维护一个尾节点
+                    for i in range(length): # 遍历当前层
+                        curnode = queue.pop(0)
+                        if tail:
+                            tail.next = curnode # 让尾节点指向当前节点
+                        tail = curnode # 让当前节点成为尾节点
+                        if curnode.left : queue.append(curnode.left)
+                        if curnode.right: queue.append(curnode.right)
+                return root
+
+        # 链表解法
+        class Solution:
+            def connect(self, root: 'Node') -> 'Node':
+                if not root:
+                    return None
+                first = root
+                while first:  # 遍历每一层
+                    dummyHead = Node(None)  # 为下一行创建一个虚拟头节点，相当于下一行所有节点链表的头结点(每一层都会创建)；
+                    tail = dummyHead  # 为下一行维护一个尾节点指针（初始化是虚拟节点）
+                    cur = first
+                    while cur:  # 遍历当前层的节点
+                        if cur.left:  # 链接下一行的节点
+                            tail.next = cur.left
+                            tail = tail.next
+                        if cur.right:
+                            tail.next = cur.right
+                            tail = tail.next
+                        cur = cur.next  # cur同层移动到下一节点
+                    first = dummyHead.next  # 此处为换行操作，更新到下一行
+                return root
+        ```
+
+    - 二叉树最大深度
+
+        ```python
+        class Solution:
+            def maxDepth(self, root: TreeNode) -> int:
+                if root == None:
+                    return 0
+                
+                queue_ = [root]
+                result = []
+                while queue_:
+                    length = len(queue_)
+                    sub = []
+                    for i in range(length):
+                        cur = queue_.pop(0)
+                        sub.append(cur.val)
+                        #子节点入队列
+                        if cur.left: queue_.append(cur.left)
+                        if cur.right: queue_.append(cur.right)
+                    result.append(sub)
+                    
+
+                return len(result)
+        ```
+
+    - 二叉树最小深度
+
+        ```python
+        # Definition for a binary tree node.
+        # class TreeNode:
+        #     def __init__(self, val=0, left=None, right=None):
+        #         self.val = val
+        #         self.left = left
+        #         self.right = right
+        class Solution:
+            def minDepth(self, root: TreeNode) -> int:
+                if root == None:
+                    return 0
+
+                #根节点的深度为1
+                queue_ = [(root,1)]
+                while queue_:
+                    cur, depth = queue_.pop(0)
+                    
+                    if cur.left == None and cur.right == None:
+                        return depth
+                    #先左子节点，由于左子节点没有孩子，则就是这一层了
+                    if cur.left:
+                        queue_.append((cur.left,depth + 1))
+                    if cur.right:
+                        queue_.append((cur.right,depth + 1))
+
+                return 0
+        ```
+
+    - 翻转二叉树
+
+        ```python
+        # 递归前序
+        class Solution:
+            def invertTree(self, root: TreeNode) -> TreeNode:
+                if not root:
+                    return None
+                root.left, root.right = root.right, root.left #中
+                self.invertTree(root.left) #左
+                self.invertTree(root.right) #右
+                return root
+
+        # 迭代 深度优先
+        class Solution:
+            def invertTree(self, root: TreeNode) -> TreeNode:
+                if not root:
+                    return root
+                st = []
+                st.append(root)
+                while st:
+                    node = st.pop()
+                    node.left, node.right = node.right, node.left #中
+                    if node.right:
+                        st.append(node.right) #右
+                    if node.left:
+                        st.append(node.left) #左
+                return root
+
+        # 迭代广度优先
+        import collections
+        class Solution:
+            def invertTree(self, root: TreeNode) -> TreeNode:
+                queue = collections.deque() #使用deque()
+                if root:
+                    queue.append(root)
+                while queue:
+                    size = len(queue)
+                    for i in range(size):
+                        node = queue.popleft()
+                        node.left, node.right = node.right, node.left #节点处理
+                        if node.left:
+                            queue.append(node.left)
+                        if node.right:
+                            queue.append(node.right)
+                return root
+        ```
+
+    - 对称二叉树
+
+        ```python
+        # 递归
+        class Solution:
+            def isSymmetric(self, root: TreeNode) -> bool:
+                if not root:
+                    return True
+                return self.compare(root.left, root.right)
+                
+            def compare(self, left, right):
+                #首先排除空节点的情况
+                if left == None and right != None: return False
+                elif left != None and right == None: return False
+                elif left == None and right == None: return True
+                #排除了空节点，再排除数值不相同的情况
+                elif left.val != right.val: return False
+                
+                #此时就是：左右节点都不为空，且数值相同的情况
+                #此时才做递归，做下一层的判断
+                outside = self.compare(left.left, right.right) #左子树：左、 右子树：右
+                inside = self.compare(left.right, right.left) #左子树：右、 右子树：左
+                isSame = outside and inside #左子树：中、 右子树：中 （逻辑处理）
+                return isSame
+
+        # 迭代 使用队列
+        import collections
+        class Solution:
+            def isSymmetric(self, root: TreeNode) -> bool:
+                if not root:
+                    return True
+                queue = collections.deque()
+                queue.append(root.left) #将左子树头结点加入队列
+                queue.append(root.right) #将右子树头结点加入队列
+                while queue: #接下来就要判断这这两个树是否相互翻转
+                    leftNode = queue.popleft()
+                    rightNode = queue.popleft()
+                    if not leftNode and not rightNode: #左节点为空、右节点为空，此时说明是对称的
+                        continue
+                    
+                    #左右一个节点不为空，或者都不为空但数值不相同，返回false
+                    if not leftNode or not rightNode or leftNode.val != rightNode.val:
+                        return False
+                    queue.append(leftNode.left) #加入左节点左孩子
+                    queue.append(rightNode.right) #加入右节点右孩子
+                    queue.append(leftNode.right) #加入左节点右孩子
+                    queue.append(rightNode.left) #加入右节点左孩子
+                return True
+
+        # 迭代使用栈
+        class Solution:
+            def isSymmetric(self, root: TreeNode) -> bool:
+                if not root:
+                    return True
+                st = [] #这里改成了栈
+                st.append(root.left)
+                st.append(root.right)
+                while st:
+                    leftNode = st.pop()
+                    rightNode = st.pop()
+                    if not leftNode and not rightNode:
+                        continue
+                    if not leftNode or not rightNode or leftNode.val != rightNode.val:
+                        return False
+                    st.append(leftNode.left)
+                    st.append(rightNode.right)
+                    st.append(leftNode.right)
+                    st.append(rightNode.left)
+                return True
+        ```
+
+- 完全二叉树的节点个数
+
+    ```python
+    # 递归
+    class Solution:
+        def countNodes(self, root: TreeNode) -> int:
+            return self.getNodesNum(root)
+            
+        def getNodesNum(self, cur):
+            if not cur:
+                return 0
+            leftNum = self.getNodesNum(cur.left) #左
+            rightNum = self.getNodesNum(cur.right) #右
+            treeNum = leftNum + rightNum + 1 #中
+            return treeNum
+    # 迭代
+    import collections
+    class Solution:
+        def countNodes(self, root: TreeNode) -> int:
+            queue = collections.deque()
+            if root:
+                queue.append(root)
+            result = 0
+            while queue:
+                size = len(queue)
+                for i in range(size):
+                    node = queue.popleft()
+                    result += 1 #记录节点数量
+                    if node.left:
+                        queue.append(node.left)
+                    if node.right:
+                        queue.append(node.right)
+            return result
+    ```
+
+- 平衡二叉树
+
+    ```python
+    # 递归
+    class Solution:
+        def isBalanced(self, root: TreeNode) -> bool:
+            return True if self.getDepth(root) != -1 else False
+        
+        #返回以该节点为根节点的二叉树的高度，如果不是二叉搜索树了则返回-1
+        def getDepth(self, node):
+            if not node:
+                return 0
+            leftDepth = self.getDepth(node.left)
+            if leftDepth == -1: return -1 #说明左子树已经不是二叉平衡树
+            rightDepth = self.getDepth(node.right)
+            if rightDepth == -1: return -1 #说明右子树已经不是二叉平衡树
+            return -1 if abs(leftDepth - rightDepth)>1 else 1 + max(leftDepth, rightDepth)
+
+    # 迭代
+    class Solution:
+        def isBalanced(self, root: TreeNode) -> bool:
+            st = []
+            if not root:
+                return True
+            st.append(root)
+            while st:
+                node = st.pop() #中
+                if abs(self.getDepth(node.left) - self.getDepth(node.right)) > 1:
+                    return False
+                if node.right:
+                    st.append(node.right) #右（空节点不入栈）
+                if node.left:
+                    st.append(node.left) #左（空节点不入栈）
+            return True
+        
+        def getDepth(self, cur):
+            st = []
+            if cur:
+                st.append(cur)
+            depth = 0
+            result = 0
+            while st:
+                node = st.pop()
+                if node:
+                    st.append(node) #中
+                    st.append(None)
+                    depth += 1
+                    if node.right: st.append(node.right) #右
+                    if node.left: st.append(node.left) #左
+                else:
+                    node = st.pop()
+                    depth -= 1
+                result = max(result, depth)
+            return result
+    ```
+
+- 二叉树所有路径
+
+    ```python
+    class Solution:
+        def binaryTreePaths(self, root: TreeNode) -> List[str]:
+            path=[]
+            res=[]
+            def backtrace(root, path):
+                if not root:return 
+                path.append(root.val)
+                if (not root.left)and (not root.right):
+                   res.append(path[:])
+                ways=[]
+                if root.left:ways.append(root.left)
+                if root.right:ways.append(root.right)
+                for way in ways:
+                    backtrace(way,path)
+                    path.pop()
+            backtrace(root,path)
+            return ["->".join(list(map(str,i))) for i in res]
+    ```
+
+- 左叶子之和
+
+    ```python
+    # 递归
+    class Solution:
+        def sumOfLeftLeaves(self, root: TreeNode) -> int:
+            if not root: 
+                return 0
+            
+            left_left_leaves_sum = self.sumOfLeftLeaves(root.left)  # 左
+            right_left_leaves_sum = self.sumOfLeftLeaves(root.right) # 右
+            
+            cur_left_leaf_val = 0
+            if root.left and not root.left.left and not root.left.right: 
+                cur_left_leaf_val = root.left.val  # 中
+                
+            return cur_left_leaf_val + left_left_leaves_sum + right_left_leaves_sum
+
+    # 迭代
+    class Solution:
+        def sumOfLeftLeaves(self, root: TreeNode) -> int:
+            """
+            Idea: Each time check current node's left node. 
+                  If current node don't have one, skip it. 
+            """
+            stack = []
+            if root: 
+                stack.append(root)
+            res = 0
+            
+            while stack: 
+                # 每次都把当前节点的左节点加进去. 
+                cur_node = stack.pop()
+                if cur_node.left and not cur_node.left.left and not cur_node.left.right: 
+                    res += cur_node.left.val
+                    
+                if cur_node.left: 
+                    stack.append(cur_node.left)
+                if cur_node.right: 
+                    stack.append(cur_node.right)
+                    
+            return res
+    ```
+
+- 左下角
+
+    ```python
+    # 递归
+    class Solution:
+        def findBottomLeftValue(self, root: TreeNode) -> int:
+            max_depth = -float("INF")
+            leftmost_val = 0
+
+            def __traverse(root, cur_depth): 
+                nonlocal max_depth, leftmost_val
+                if not root.left and not root.right: 
+                    if cur_depth > max_depth: 
+                        max_depth = cur_depth
+                        leftmost_val = root.val  
+                if root.left: 
+                    cur_depth += 1
+                    __traverse(root.left, cur_depth)
+                    cur_depth -= 1
+                if root.right: 
+                    cur_depth += 1
+                    __traverse(root.right, cur_depth)
+                    cur_depth -= 1
+
+            __traverse(root, 0)
+            return leftmost_val
+    # 迭代
+    class Solution:
+        def findBottomLeftValue(self, root: TreeNode) -> int:
+            queue = deque()
+            if root: 
+                queue.append(root)
+            result = 0
+            while queue: 
+                q_len = len(queue)
+                for i in range(q_len): 
+                    if i == 0: 
+                        result = queue[i].val 
+                    cur = queue.popleft()
+                    if cur.left: 
+                        queue.append(cur.left)
+                    if cur.right: 
+                        queue.append(cur.right)
+            return result
+    ```
+
+- 路径总和1
+
+    ```python
+    # 递归
+    class solution:
+        def haspathsum(self, root: treenode, targetsum: int) -> bool:
+            def isornot(root, targetsum) -> bool:
+                if (not root.left) and (not root.right) and targetsum == 0:
+                    return true  # 遇到叶子节点，并且计数为0
+                if (not root.left) and (not root.right):
+                    return false  # 遇到叶子节点，计数不为0
+                if root.left:
+                    targetsum -= root.left.val  # 左节点
+                    if isornot(root.left, targetsum): return true  # 递归，处理左节点
+                    targetsum += root.left.val  # 回溯
+                if root.right:
+                    targetsum -= root.right.val  # 右节点
+                    if isornot(root.right, targetsum): return true  # 递归，处理右节点
+                    targetsum += root.right.val  # 回溯
+                return false
+
+            if root == none:
+                return false  # 别忘记处理空treenode
+            else:
+                return isornot(root, targetsum - root.val)
+    # 迭代
+    class solution:
+        def haspathsum(self, root: treenode, targetsum: int) -> bool:
+            if not root: 
+                return false
+
+            stack = []  # [(当前节点，路径数值), ...]
+            stack.append((root, root.val))
+
+            while stack: 
+                cur_node, path_sum = stack.pop()
+
+                if not cur_node.left and not cur_node.right and path_sum == targetsum: 
+                    return true
+
+                if cur_node.right: 
+                    stack.append((cur_node.right, path_sum + cur_node.right.val))    
+
+                if cur_node.left: 
+                    stack.append((cur_node.left, path_sum + cur_node.left.val))
+
+            return false
+    ```
+
+- 路径总和2
+
+    ```python
+    # 递归
+    class solution:
+        def pathsum(self, root: treenode, targetsum: int) -> list[list[int]]:
+
+            def traversal(cur_node, remain): 
+                if not cur_node.left and not cur_node.right and remain == 0: 
+                    result.append(path[:])
+                    return
+
+                if not cur_node.left and not cur_node.right: return 
+
+                if cur_node.left: 
+                    path.append(cur_node.left.val)
+                    remain -= cur_node.left.val
+                    traversal(cur_node.left, remain)
+                    path.pop()
+                    remain += cur_node.left.val
+
+                if cur_node.right: 
+                    path.append(cur_node.right.val)
+                    remain -= cur_node.right.val
+                    traversal(cur_node.right, remain)
+                    path.pop()
+                    remain += cur_node.right.val
+
+            result, path = [], []
+            if not root: 
+                return []
+            path.append(root.val)
+            traversal(root, targetsum - root.val)
+            return result
+    ```
+
+- 构造二叉树
+
+    ```python
+    # 前序+中序
+    class Solution:
+        def buildTree(self, preorder: List[int], inorder: List[int]) -> TreeNode:
+            # 第一步: 特殊情况讨论: 树为空. 或者说是递归终止条件
+            if not preorder: 
+                return None
+
+            # 第二步: 前序遍历的第一个就是当前的中间节点. 
+            root_val = preorder[0]
+            root = TreeNode(root_val)
+
+            # 第三步: 找切割点. 
+            separator_idx = inorder.index(root_val)
+
+            # 第四步: 切割inorder数组. 得到inorder数组的左,右半边. 
+            inorder_left = inorder[:separator_idx]
+            inorder_right = inorder[separator_idx + 1:]
+
+            # 第五步: 切割preorder数组. 得到preorder数组的左,右半边.
+            # ⭐️ 重点1: 中序数组大小一定跟前序数组大小是相同的. 
+            preorder_left = preorder[1:1 + len(inorder_left)]
+            preorder_right = preorder[1 + len(inorder_left):]
+
+            # 第六步: 递归
+            root.left = self.buildTree(preorder_left, inorder_left)
+            root.right = self.buildTree(preorder_right, inorder_right)
+
+            return root
+
+    # 中序+后序
+    class Solution:
+        def buildTree(self, inorder: List[int], postorder: List[int]) -> TreeNode:
+            # 第一步: 特殊情况讨论: 树为空. (递归终止条件)
+            if not postorder: 
+                return None
+
+            # 第二步: 后序遍历的最后一个就是当前的中间节点. 
+            root_val = postorder[-1]
+            root = TreeNode(root_val)
+
+            # 第三步: 找切割点. 
+            separator_idx = inorder.index(root_val)
+
+            # 第四步: 切割inorder数组. 得到inorder数组的左,右半边. 
+            inorder_left = inorder[:separator_idx]
+            inorder_right = inorder[separator_idx + 1:]
+
+            # 第五步: 切割postorder数组. 得到postorder数组的左,右半边.
+            # ⭐️ 重点1: 中序数组大小一定跟后序数组大小是相同的. 
+            postorder_left = postorder[:len(inorder_left)]
+            postorder_right = postorder[len(inorder_left): len(postorder) - 1]
+
+            # 第六步: 递归
+            root.left = self.buildTree(inorder_left, postorder_left)
+            root.right = self.buildTree(inorder_right, postorder_right)
+
+            return root
+    ```
+
+- 数组构造最大二叉树
+
+    ```python
+    //递归法
+    class Solution:
+        def constructMaximumBinaryTree(self, nums: List[int]) -> TreeNode:
+            if not nums: return None   //终止条件
+            root = TreeNode(max(nums))   //新建节点
+            p = nums.index(root.val)   //找到最大值位置
+            if p > 0: //保证有左子树
+                root.left = self.constructMaximumBinaryTree(nums[:p])   //递归
+            if p < len(nums): //保证有右子树
+                root.right = self.constructMaximumBinaryTree(nums[p+1:])  //递归
+            return root
+    ```
+
+- 合并二叉树
+
+    ```python
+    # 递归 前序遍历
+    # Definition for a binary tree node.
+    # class TreeNode:
+    #     def __init__(self, val=0, left=None, right=None):
+    #         self.val = val
+    #         self.left = left
+    #         self.right = right
+    class Solution:
+        def mergeTrees(self, root1: TreeNode, root2: TreeNode) -> TreeNode:
+            # 递归终止条件: 
+            #  但凡有一个节点为空, 就立刻返回另外一个. 如果另外一个也为None就直接返回None. 
+            if not root1: 
+                return root2
+            if not root2: 
+                return root1
+            # 上面的递归终止条件保证了代码执行到这里root1, root2都非空. 
+            root1.val += root2.val # 中
+            root1.left = self.mergeTrees(root1.left, root2.left) #左
+            root1.right = self.mergeTrees(root1.right, root2.right) # 右
+            
+            return root1 # ⚠️ 注意: 本题我们重复使用了题目给出的节点而不是创建新节点. 节省时间, 空间.
+
+    # 迭代
+    class Solution:
+        def mergeTrees(self, root1: TreeNode, root2: TreeNode) -> TreeNode:
+            if not root1: 
+                return root2
+            if not root2: 
+                return root1
+
+            queue = deque()
+            queue.append(root1)
+            queue.append(root2)
+
+            while queue: 
+                node1 = queue.popleft()
+                node2 = queue.popleft()
+                # 更新queue
+                # 只有两个节点都有左节点时, 再往queue里面放.
+                if node1.left and node2.left: 
+                    queue.append(node1.left)
+                    queue.append(node2.left)
+                # 只有两个节点都有右节点时, 再往queue里面放.
+                if node1.right and node2.right: 
+                    queue.append(node1.right)
+                    queue.append(node2.right)
+
+                # 更新当前节点. 同时改变当前节点的左右孩子. 
+                node1.val += node2.val
+                if not node1.left and node2.left: 
+                    node1.left = node2.left
+                if not node1.right and node2.right: 
+                    node1.right = node2.right
+
+            return root1
+    ```
+
+-
