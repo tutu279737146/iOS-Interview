@@ -3045,654 +3045,655 @@ if (cachedImage && options & SDWebImageRefreshCached) {
 
 ###### 四树之和
 
-          ```python
-            # 双指针法
-          class Solution:
-              def fourSum(self, nums: List[int], target: int) -> List[List[int]]:
+      ```python
+        # 双指针法
+      class Solution:
+          def fourSum(self, nums: List[int], target: int) -> List[List[int]]:
 
-                  nums.sort()
-                  n = len(nums)
-                  res = []
-                  for i in range(n):
-                      if i > 0 and nums[i] == nums[i - 1]: continue
-                      for k in range(i+1, n):
-                          if k > i + 1 and nums[k] == nums[k-1]: continue
-                          p = k + 1
-                          q = n - 1
+              nums.sort()
+              n = len(nums)
+              res = []
+              for i in range(n):
+                  if i > 0 and nums[i] == nums[i - 1]: continue
+                  for k in range(i+1, n):
+                      if k > i + 1 and nums[k] == nums[k-1]: continue
+                      p = k + 1
+                      q = n - 1
 
-                          while p < q:
-                              if nums[i] + nums[k] + nums[p] + nums[q] > target: q -= 1
-                              elif nums[i] + nums[k] + nums[p] + nums[q] < target: p += 1
-                              else:
-                                  res.append([nums[i], nums[k], nums[p], nums[q]])
-                                  while p < q and nums[p] == nums[p + 1]: p += 1
-                                  while p < q and nums[q] == nums[q - 1]: q -= 1
-                                  p += 1
-                                  q -= 1
-                  return res
+                      while p < q:
+                          if nums[i] + nums[k] + nums[p] + nums[q] > target: q -= 1
+                          elif nums[i] + nums[k] + nums[p] + nums[q] < target: p += 1
+                          else:
+                              res.append([nums[i], nums[k], nums[p], nums[q]])
+                              while p < q and nums[p] == nums[p + 1]: p += 1
+                              while p < q and nums[q] == nums[q - 1]: q -= 1
+                              p += 1
+                              q -= 1
+              return res
 
-          # 哈希表法
-          class Solution(object):
-              def fourSum(self, nums, target):
-                  """
-                  :type nums: List[int]
-                  :type target: int
-                  :rtype: List[List[int]]
-                  """
-                  # use a dict to store value:showtimes
-                  hashmap = dict()
-                  for n in nums:
-                      if n in hashmap:
-                          hashmap[n] += 1
-                      else: 
-                          hashmap[n] = 1
-
-                  # good thing about using python is you can use set to drop duplicates.
-                  ans = set()
-                  for i in range(len(nums)):
-                      for j in range(i + 1, len(nums)):
-                          for k in range(j + 1, len(nums)):
-                              val = target - (nums[i] + nums[j] + nums[k])
-                              if val in hashmap:
-                                  # make sure no duplicates.
-                                  count = (nums[i] == val) + (nums[j] == val) + (nums[k] == val)
-                                  if hashmap[val] > count:
-                                      ans.add(tuple(sorted([nums[i], nums[j], nums[k], val])))
-                              else:
-                                  continue
-                  return ans
-          ```
-
-  - 数组
-      - 二分查找
-
-          ```python
-          class Solution:
-              def search(self, nums: List[int], target: int) -> int:
-                  left, right = 0, len(nums) - 1
-
-                  while left <= right:
-                      middle = (left + right) // 2
-
-                      if nums[middle] < target:
-                          left = middle + 1
-                      elif nums[middle] > target:
-                          right = middle - 1
-                      else:
-                          return middle
-                  return -1
-          ```
-
-      - 移除元素
-
-          ```python
-          class Solution:
-              """双指针法
-              时间复杂度：O(n)
-              空间复杂度：O(1)
+      # 哈希表法
+      class Solution(object):
+          def fourSum(self, nums, target):
               """
-
-              @classmethod
-              def removeElement(cls, nums: List[int], val: int) -> int:
-                  fast = slow = 0
-
-                  while fast < len(nums):
-
-                      if nums[fast] != val:
-                          nums[slow] = nums[fast]
-                          slow += 1
-
-                      # 当 fast 指针遇到要删除的元素时停止赋值
-                      # slow 指针停止移动, fast 指针继续前进
-                      fast += 1
-
-                  return slow
-          ```
-
-      - 数组平方
-
-          ```python
-          class Solution:
-              """双指针法
-              时间复杂度：O(n)
+              :type nums: List[int]
+              :type target: int
+              :rtype: List[List[int]]
               """
-              def sortedSquares(self, nums: List[int]) -> List[int]:
-                  n = len(nums)
-                  i,j,k = 0,n - 1,n - 1
-                  ans = [-1] * n
-                  while i <= j:
-                      lm = nums[i] ** 2
-                      rm = nums[j] ** 2
-                      if lm > rm:
-                          ans[k] = lm
-                          i += 1
-                      else:
-                          ans[k] = rm
-                          j -= 1
-                      k -= 1
-                  return ans
-          ```
+              # use a dict to store value:showtimes
+              hashmap = dict()
+              for n in nums:
+                  if n in hashmap:
+                      hashmap[n] += 1
+                  else: 
+                      hashmap[n] = 1
 
-      - 长度最小子数组
+              # good thing about using python is you can use set to drop duplicates.
+              ans = set()
+              for i in range(len(nums)):
+                  for j in range(i + 1, len(nums)):
+                      for k in range(j + 1, len(nums)):
+                          val = target - (nums[i] + nums[j] + nums[k])
+                          if val in hashmap:
+                              # make sure no duplicates.
+                              count = (nums[i] == val) + (nums[j] == val) + (nums[k] == val)
+                              if hashmap[val] > count:
+                                  ans.add(tuple(sorted([nums[i], nums[j], nums[k], val])))
+                          else:
+                              continue
+              return ans
+      ```
 
-          ```python
-          class Solution:
-              """滑动窗口
-              时间复杂度：O(n)
-              """
-              def minSubArrayLen(self, s: int, nums: List[int]) -> int:
-                  # 定义一个无限大的数
-                  res = float("inf")
-                  Sum = 0
-                  index = 0
-                  for i in range(len(nums)):
-                      Sum += nums[i]
-                      while Sum >= s:
-                          res = min(res, i-index+1)
-                          Sum -= nums[index]
-                          index += 1
-                  return 0 if res==float("inf") else res
-          ```
+#### 数组
+###### 二分查找
 
-      - 螺旋矩阵
+      ```python
+      class Solution:
+          def search(self, nums: List[int], target: int) -> int:
+              left, right = 0, len(nums) - 1
 
-          ```python
-          class Solution:
+              while left <= right:
+                  middle = (left + right) // 2
 
-              def generateMatrix(self, n: int) -> List[List[int]]:
-                  # 初始化要填充的正方形
-                  matrix = [[0] * n for _ in range(n)]
-
-                  left, right, up, down = 0, n - 1, 0, n - 1
-                  number = 1  # 要填充的数字
-
-                  while left < right and up < down:
-
-                      # 从左到右填充上边
-                      for x in range(left, right):
-                          matrix[up][x] = number
-                          number += 1
-
-                      # 从上到下填充右边
-                      for y in range(up, down):
-                          matrix[y][right] = number
-                          number += 1
-
-                      # 从右到左填充下边
-                      for x in range(right, left, -1):
-                          matrix[down][x] = number
-                          number += 1
-
-                      # 从下到上填充左边
-                      for y in range(down, up, -1):
-                          matrix[y][left] = number
-                          number += 1
-
-                      # 缩小要填充的范围
-                      left += 1
-                      right -= 1
-                      up += 1
-                      down -= 1
-
-                  # 如果阶数为奇数，额外填充一次中心
-                  if n % 2:
-                      matrix[n // 2][n // 2] = number
-
-                  return matrix
-          ```
-
-  - 字符串
-      - 翻转字符串1
-
-          ```python
-          class Solution:
-              def reverseString(self, s: List[str]) -> None:
-                  """
-                  Do not return anything, modify s in-place instead.
-                  """
-                  left, right = 0, len(s) - 1
-
-                  # 该方法已经不需要判断奇偶数，经测试后时间空间复杂度比用 for i in range(right//2)更低
-                  # 推荐该写法，更加通俗易懂
-                  while left < right:
-                      s[left], s[right] = s[right], s[left]
-                      left += 1
-                      right -= 1
-          ```
-
-      - 翻转字符串2
-
-          ```python
-          class Solution:
-              def reverseStr(self, s: str, k: int) -> str:
-                  """
-                  1. 使用range(start, end, step)来确定需要调换的初始位置
-                  2. 对于字符串s = 'abc'，如果使用s[0:999] ===> 'abc'。字符串末尾如果超过最大长度，则会返回至字符串最后一个值，这个特性可以避免一些边界条件的处理。
-                  3. 用切片整体替换，而不是一个个替换.
-                  """
-                  def reverse_substring(text):
-                      left, right = 0, len(text) - 1
-                      while left < right:
-                          text[left], text[right] = text[right], text[left]
-                          left += 1
-                          right -= 1
-                      return text
-
-                  res = list(s)
-
-                  for cur in range(0, len(s), 2 * k):
-                      res[cur: cur + k] = reverse_substring(res[cur: cur + k])
-
-                  return ''.join(res)
-          ```
-
-      - 替换空格
-
-          ```python
-          # 时间 O(n) 空间O(1)
-
-          class Solution:
-              def replaceSpace(self, s: str) -> str:
-                  counter = s.count(' ')
-
-                  res = list(s)
-                  # 每碰到一个空格就多拓展两个格子，1 + 2 = 3个位置存’%20‘
-                  res.extend([' '] * counter * 2)
-
-                  # 原始字符串的末尾，拓展后的末尾
-                  left, right = len(s) - 1, len(res) - 1
-
-                  while left >= 0:
-                      if res[left] != ' ':
-                          res[right] = res[left]
-                          right -= 1
-                      else:
-                          # [right - 2, right), 左闭右开
-                          res[right - 2: right + 1] = '%20'
-                          right -= 3
-                      left -= 1
-                  return ''.join(res)
-          ```
-
-      - 翻转单词
-
-          ```python
-          class Solution:
-            #1.去除多余的空格
-                  def trim_spaces(self,s):     
-                      n=len(s)
-                      left=0
-                      right=n-1
-
-                      while left<=right and s[left]==' ':       #去除开头的空格
-                          left+=1
-                      while left<=right and s[right]==' ':        #去除结尾的空格
-                          right=right-1
-                      tmp=[]
-                      while left<=right:                                    #去除单词中间多余的空格
-                          if s[left]!=' ':
-                              tmp.append(s[left])
-                          elif tmp[-1]!=' ':                                  #当前位置是空格，但是相邻的上一个位置不是空格，则该空格是合理的
-                              tmp.append(s[left])
-                          left+=1
-                      return tmp
-          #2.翻转字符数组
-                  def reverse_string(self,nums,left,right):
-                      while left<right:
-                          nums[left], nums[right]=nums[right],nums[left]
-                          left+=1
-                          right-=1
-                      return None
-          #3.翻转每个单词
-                  def reverse_each_word(self, nums):
-                      start=0
-                      end=0
-                      n=len(nums)
-                      while start<n:
-                          while end<n and nums[end]!=' ':
-                              end+=1
-                          self.reverse_string(nums,start,end-1)
-                          start=end+1
-                          end+=1
-                      return None
-
-          #4.翻转字符串里的单词
-                  def reverseWords(self, s): #测试用例："the sky is blue"
-                      l = self.trim_spaces(s)                     #输出：['t', 'h', 'e', ' ', 's', 'k', 'y', ' ', 'i', 's', ' ', 'b', 'l', 'u', 'e'
-                      self.reverse_string( l,  0, len(l) - 1)   #输出：['e', 'u', 'l', 'b', ' ', 's', 'i', ' ', 'y', 'k', 's', ' ', 'e', 'h', 't']
-                      self.reverse_each_word(l)               #输出：['b', 'l', 'u', 'e', ' ', 'i', 's', ' ', 's', 'k', 'y', ' ', 't', 'h', 'e']
-                      return ''.join(l)                                 #输出：blue is sky the
-          ```
-
-      - 左旋转字符串
-
-          ```python
-          # 方法一：可以使用切片方法
-          class Solution:
-              def reverseLeftWords(self, s: str, n: int) -> str:
-                  return s[n:] + s[0:n]
-          # 方法二：也可以使用上文描述的方法，有些面试中不允许使用切片，那就使用上文作者提到的方法
-          class Solution:
-              def reverseLeftWords(self, s: str, n: int) -> str:
-                  s = list(s)
-                  s[0:n] = list(reversed(s[0:n]))
-                  s[n:] = list(reversed(s[n:]))
-                  s.reverse()
-
-                  return "".join(s)
-          # 方法三：如果连reversed也不让使用，那么自己手写一个
-          class Solution:
-              def reverseLeftWords(self, s: str, n: int) -> str:
-                  def reverse_sub(lst, left, right):
-                      while left < right:
-                          lst[left], lst[right] = lst[right], lst[left]
-                          left += 1
-                          right -= 1
-
-                  res = list(s)
-                  end = len(res) - 1
-                  reverse_sub(res, 0, n - 1)
-                  reverse_sub(res, n, end)
-                  reverse_sub(res, 0, end)
-                  return ''.join(res)
-
-          # 同方法二
-          # 时间复杂度：O(n)
-          # 空间复杂度：O(n)，python的string为不可变，需要开辟同样大小的list空间来修改
-
-          #方法四：考虑不能用切片的情况下，利用模+下标实现
-          class Solution:
-              def reverseLeftWords(self, s: str, n: int) -> str:
-                  new_s = ''
-                  for i in range(len(s)):
-                      j = (i+n)%len(s)
-                      new_s = new_s + s[j]
-                  return new_s
-          ```
-
-      - KMP
-          - 
-
-          ```python
-          #时间 O(n+m)
-          // 方法一
-          class Solution:
-              def strStr(self, haystack: str, needle: str) -> int:
-                  a=len(needle)
-                  b=len(haystack)
-                  if a==0:
-                      return 0
-                  next=self.getnext(a,needle)
-                  p=-1
-                  for j in range(b):
-                      while p>=0 and needle[p+1]!=haystack[j]:
-                          p=next[p]
-                      if needle[p+1]==haystack[j]:
-                          p+=1
-                      if p==a-1:
-                          return j-a+1
-                  return -1
-
-              def getnext(self,a,needle):
-                  next=['' for i in range(a)]
-                  k=-1
-                  next[0]=k
-                  for i in range(1,len(needle)):
-                      while (k>-1 and needle[k+1]!=needle[i]):
-                          k=next[k]
-                      if needle[k+1]==needle[i]:
-                          k+=1
-                      next[i]=k
-                  return next
-          // 方法二
-          class Solution:
-              def strStr(self, haystack: str, needle: str) -> int:
-                  a=len(needle)
-                  b=len(haystack)
-                  if a==0:
-                      return 0
-                  i=j=0
-                  next=self.getnext(a,needle)
-                  while(i<b and j<a):
-                      if j==-1 or needle[j]==haystack[i]:
-                          i+=1
-                          j+=1
-                      else:
-                          j=next[j]
-                  if j==a:
-                      return i-j
+                  if nums[middle] < target:
+                      left = middle + 1
+                  elif nums[middle] > target:
+                      right = middle - 1
                   else:
-                      return -1
+                      return middle
+              return -1
+      ```
 
-              def getnext(self,a,needle):
-                  next=['' for i in range(a)]
-                  j,k=0,-1
-                  next[0]=k
-                  while(j<a-1):
-                      if k==-1 or needle[k]==needle[j]:
-                          k+=1
-                          j+=1
-                          next[j]=k
-                      else:
-                          k=next[k]
-                  return next
-          ```
+###### 移除元素
 
-      - 重复子字符串
+      ```python
+      class Solution:
+          """双指针法
+          时间复杂度：O(n)
+          空间复杂度：O(1)
+          """
 
-          ```python
-          class Solution:
-              def repeatedSubstringPattern(self, s: str) -> bool:  
-                  if len(s) == 0:
-                      return False
-                  nxt = [0] * len(s)
-                  self.getNext(nxt, s)
-                  if nxt[-1] != -1 and len(s) % (len(s) - (nxt[-1] + 1)) == 0:
-                      return True
-                  return False
+          @classmethod
+          def removeElement(cls, nums: List[int], val: int) -> int:
+              fast = slow = 0
 
-              def getNext(self, nxt, s):
-                  nxt[0] = -1
-                  j = -1
-                  for i in range(1, len(s)):
-                      while j >= 0 and s[i] != s[j+1]:
-                          j = nxt[j]
-                      if s[i] == s[j+1]:
-                          j += 1
-                      nxt[i] = j
-                  return nxt
+              while fast < len(nums):
 
-          class Solution:
-              def repeatedSubstringPattern(self, s: str) -> bool:  
-                  if len(s) == 0:
-                      return False
-                  nxt = [0] * len(s)
-                  self.getNext(nxt, s)
-                  if nxt[-1] != 0 and len(s) % (len(s) - nxt[-1]) == 0:
-                      return True
-                  return False
+                  if nums[fast] != val:
+                      nums[slow] = nums[fast]
+                      slow += 1
 
-              def getNext(self, nxt, s):
-                  nxt[0] = 0
-                  j = 0
-                  for i in range(1, len(s)):
-                      while j > 0 and s[i] != s[j]:
-                          j = nxt[j - 1]
-                      if s[i] == s[j]:
-                          j += 1
-                      nxt[i] = j
-                  return nxt
-          ```
+                  # 当 fast 指针遇到要删除的元素时停止赋值
+                  # slow 指针停止移动, fast 指针继续前进
+                  fast += 1
 
-  - 链表
-      - 移除链表元素(头插法 t0(n),s0(1))
+              return slow
+      ```
 
-          ```python
-          # Definition for singly-linked list.
-          # class ListNode:
-          #     def __init__(self, val=0, next=None):
-          #         self.val = val
-          #         self.next = next
-          class Solution:
-              def removeElements(self, head: ListNode, val: int) -> ListNode:
-                  dummy_head = ListNode(next=head) #添加一个虚拟节点
-                  cur = dummy_head
-                  while(cur.next!=None):
-                      if(cur.next.val == val):
-                          cur.next = cur.next.next #删除cur.next节点
-                      else:
-                          cur = cur.next
-                  return dummy_head.next
-          ```
+###### 数组平方
 
-      - 翻转链表1
+      ```python
+      class Solution:
+          """双指针法
+          时间复杂度：O(n)
+          """
+          def sortedSquares(self, nums: List[int]) -> List[int]:
+              n = len(nums)
+              i,j,k = 0,n - 1,n - 1
+              ans = [-1] * n
+              while i <= j:
+                  lm = nums[i] ** 2
+                  rm = nums[j] ** 2
+                  if lm > rm:
+                      ans[k] = lm
+                      i += 1
+                  else:
+                      ans[k] = rm
+                      j -= 1
+                  k -= 1
+              return ans
+      ```
 
-          ```python
-          #双指针 迭代
-          # Definition for singly-linked list.
-          # class ListNode:
-          #     def __init__(self, val=0, next=None):
-          #         self.val = val
-          #         self.next = next
-          class Solution:
-              def reverseList(self, head: ListNode) -> ListNode:
-                  cur = head   
-                  pre = None
-                  while(cur!=None):
-                      temp = cur.next # 保存一下 cur的下一个节点，因为接下来要改变cur->next
-                      cur.next = pre #反转
-                      #更新pre、cur指针
-                      pre = cur
-                      cur = temp
-                  return pre
+###### 长度最小子数组
 
-          # 递归
-          # Definition for singly-linked list.
-          # class ListNode:
-          #     def __init__(self, val=0, next=None):
-          #         self.val = val
-          #         self.next = next
-          class Solution:
-              def reverseList(self, head: ListNode) -> ListNode:
+      ```python
+      class Solution:
+          """滑动窗口
+          时间复杂度：O(n)
+          """
+          def minSubArrayLen(self, s: int, nums: List[int]) -> int:
+              # 定义一个无限大的数
+              res = float("inf")
+              Sum = 0
+              index = 0
+              for i in range(len(nums)):
+                  Sum += nums[i]
+                  while Sum >= s:
+                      res = min(res, i-index+1)
+                      Sum -= nums[index]
+                      index += 1
+              return 0 if res==float("inf") else res
+      ```
 
-                  def reverse(pre,cur):
-                      if not cur:
-                          return pre
+###### 螺旋矩阵
 
-                      tmp = cur.next
-                      cur.next = pre
+      ```python
+      class Solution:
 
-                      return reverse(cur,tmp)
+          def generateMatrix(self, n: int) -> List[List[int]]:
+              # 初始化要填充的正方形
+              matrix = [[0] * n for _ in range(n)]
 
-                  return reverse(None,head)
-          ```
+              left, right, up, down = 0, n - 1, 0, n - 1
+              number = 1  # 要填充的数字
 
-      - 翻转链表2
+              while left < right and up < down:
 
-          ```python
-          # Definition for singly-linked list.
-          # class ListNode:
-          #     def __init__(self, val=0, next=None):
-          #         self.val = val
-          #         self.next = next
+                  # 从左到右填充上边
+                  for x in range(left, right):
+                      matrix[up][x] = number
+                      number += 1
 
-          # 时间 O(n) 空间O(1)
-          class Solution:
-              def swapPairs(self, head: ListNode) -> ListNode:
-                  res = ListNode(next=head)
-                  pre = res
+                  # 从上到下填充右边
+                  for y in range(up, down):
+                      matrix[y][right] = number
+                      number += 1
 
-                  # 必须有pre的下一个和下下个才能交换，否则说明已经交换结束了
-                  while pre.next and pre.next.next:
-                      cur = pre.next
-                      post = pre.next.next
+                  # 从右到左填充下边
+                  for x in range(right, left, -1):
+                      matrix[down][x] = number
+                      number += 1
 
-                      # pre，cur，post对应最左，中间的，最右边的节点
-                      cur.next = post.next
-                      post.next = cur
-                      pre.next = post
+                  # 从下到上填充左边
+                  for y in range(down, up, -1):
+                      matrix[y][left] = number
+                      number += 1
 
-                      pre = pre.next.next
-                  return res.next
-          ```
+                  # 缩小要填充的范围
+                  left += 1
+                  right -= 1
+                  up += 1
+                  down -= 1
 
-      - 删除倒数N节点
+              # 如果阶数为奇数，额外填充一次中心
+              if n % 2:
+                  matrix[n // 2][n // 2] = number
 
-          ```python
-          # Definition for singly-linked list.
-          # class ListNode:
-          #     def __init__(self, val=0, next=None):
-          #         self.val = val
-          #         self.next = next
-          class Solution:
-              def removeNthFromEnd(self, head: ListNode, n: int) -> ListNode:
-                  head_dummy = ListNode()
-                  head_dummy.next = head
+              return matrix
+      ```
 
-                  slow, fast = head_dummy, head_dummy
-                  while(n!=0): #fast先往前走n步
-                      fast = fast.next
-                      n -= 1
-                  while(fast.next!=None):
-                      slow = slow.next
-                      fast = fast.next
-                  #fast 走到结尾后，slow的下一个节点为倒数第N个节点
-                  slow.next = slow.next.next #删除
-                  return head_dummy.next
-          ```
+## 字符串
+###### 翻转字符串1
 
-      - 链表相交
+      ```python
+      class Solution:
+          def reverseString(self, s: List[str]) -> None:
+              """
+              Do not return anything, modify s in-place instead.
+              """
+              left, right = 0, len(s) - 1
 
-          ```python
-          # Definition for singly-linked list.
-          # class ListNode:
-          #     def __init__(self, x):
-          #         self.val = x
-          #         self.next = None
+              # 该方法已经不需要判断奇偶数，经测试后时间空间复杂度比用 for i in range(right//2)更低
+              # 推荐该写法，更加通俗易懂
+              while left < right:
+                  s[left], s[right] = s[right], s[left]
+                  left += 1
+                  right -= 1
+      ```
 
-          class Solution:
-              def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> ListNode:
-                  """
-                  根据快慢法则，走的快的一定会追上走得慢的。
-                  在这道题里，有的链表短，他走完了就去走另一条链表，我们可以理解为走的快的指针。
+###### 翻转字符串2
 
-                  那么，只要其中一个链表走完了，就去走另一条链表的路。如果有交点，他们最终一定会在同一个
-                  位置相遇
-                  """
-                  cur_a, cur_b = headA, headB     # 用两个指针代替a和b
+      ```python
+      class Solution:
+          def reverseStr(self, s: str, k: int) -> str:
+              """
+              1. 使用range(start, end, step)来确定需要调换的初始位置
+              2. 对于字符串s = 'abc'，如果使用s[0:999] ===> 'abc'。字符串末尾如果超过最大长度，则会返回至字符串最后一个值，这个特性可以避免一些边界条件的处理。
+              3. 用切片整体替换，而不是一个个替换.
+              """
+              def reverse_substring(text):
+                  left, right = 0, len(text) - 1
+                  while left < right:
+                      text[left], text[right] = text[right], text[left]
+                      left += 1
+                      right -= 1
+                  return text
 
+              res = list(s)
 
-                  while cur_a != cur_b:
-                      cur_a = cur_a.next if cur_a else headB      # 如果a走完了，那么就切换到b走
-                      cur_b = cur_b.next if cur_b else headA      # 同理，b走完了就切换到a
+              for cur in range(0, len(s), 2 * k):
+                  res[cur: cur + k] = reverse_substring(res[cur: cur + k])
 
-                  return cur_a
-          ```
+              return ''.join(res)
+      ```
 
-      - 环入口
+###### 替换空格
 
-          ```python
-          class Solution:
-              def detectCycle(self, head: ListNode) -> ListNode:
-                  slow, fast = head, head
-                  while fast and fast.next:
-                      slow = slow.next
-                      fast = fast.next.next
-                      # 如果相遇
-                      if slow == fast:
-                          p = head
-                          q = slow
-                          while p!=q:
-                              p = p.next
-                              q = q.next
-                          #你也可以return q
-                          return p
+      ```python
+      # 时间 O(n) 空间O(1)
 
+      class Solution:
+          def replaceSpace(self, s: str) -> str:
+              counter = s.count(' ')
+
+              res = list(s)
+              # 每碰到一个空格就多拓展两个格子，1 + 2 = 3个位置存’%20‘
+              res.extend([' '] * counter * 2)
+
+              # 原始字符串的末尾，拓展后的末尾
+              left, right = len(s) - 1, len(res) - 1
+
+              while left >= 0:
+                  if res[left] != ' ':
+                      res[right] = res[left]
+                      right -= 1
+                  else:
+                      # [right - 2, right), 左闭右开
+                      res[right - 2: right + 1] = '%20'
+                      right -= 3
+                  left -= 1
+              return ''.join(res)
+      ```
+
+###### 翻转单词
+
+      ```python
+      class Solution:
+        #1.去除多余的空格
+              def trim_spaces(self,s):     
+                  n=len(s)
+                  left=0
+                  right=n-1
+
+                  while left<=right and s[left]==' ':       #去除开头的空格
+                      left+=1
+                  while left<=right and s[right]==' ':        #去除结尾的空格
+                      right=right-1
+                  tmp=[]
+                  while left<=right:                                    #去除单词中间多余的空格
+                      if s[left]!=' ':
+                          tmp.append(s[left])
+                      elif tmp[-1]!=' ':                                  #当前位置是空格，但是相邻的上一个位置不是空格，则该空格是合理的
+                          tmp.append(s[left])
+                      left+=1
+                  return tmp
+      #2.翻转字符数组
+              def reverse_string(self,nums,left,right):
+                  while left<right:
+                      nums[left], nums[right]=nums[right],nums[left]
+                      left+=1
+                      right-=1
                   return None
-          ```
+      #3.翻转每个单词
+              def reverse_each_word(self, nums):
+                  start=0
+                  end=0
+                  n=len(nums)
+                  while start<n:
+                      while end<n and nums[end]!=' ':
+                          end+=1
+                      self.reverse_string(nums,start,end-1)
+                      start=end+1
+                      end+=1
+                  return None
 
-  - 二叉树
-      - 递归遍历
+      #4.翻转字符串里的单词
+              def reverseWords(self, s): #测试用例："the sky is blue"
+                  l = self.trim_spaces(s)                     #输出：['t', 'h', 'e', ' ', 's', 'k', 'y', ' ', 'i', 's', ' ', 'b', 'l', 'u', 'e'
+                  self.reverse_string( l,  0, len(l) - 1)   #输出：['e', 'u', 'l', 'b', ' ', 's', 'i', ' ', 'y', 'k', 's', ' ', 'e', 'h', 't']
+                  self.reverse_each_word(l)               #输出：['b', 'l', 'u', 'e', ' ', 'i', 's', ' ', 's', 'k', 'y', ' ', 't', 'h', 'e']
+                  return ''.join(l)                                 #输出：blue is sky the
+      ```
+
+###### 左旋转字符串
+
+      ```python
+      # 方法一：可以使用切片方法
+      class Solution:
+          def reverseLeftWords(self, s: str, n: int) -> str:
+              return s[n:] + s[0:n]
+      # 方法二：也可以使用上文描述的方法，有些面试中不允许使用切片，那就使用上文作者提到的方法
+      class Solution:
+          def reverseLeftWords(self, s: str, n: int) -> str:
+              s = list(s)
+              s[0:n] = list(reversed(s[0:n]))
+              s[n:] = list(reversed(s[n:]))
+              s.reverse()
+
+              return "".join(s)
+      # 方法三：如果连reversed也不让使用，那么自己手写一个
+      class Solution:
+          def reverseLeftWords(self, s: str, n: int) -> str:
+              def reverse_sub(lst, left, right):
+                  while left < right:
+                      lst[left], lst[right] = lst[right], lst[left]
+                      left += 1
+                      right -= 1
+
+              res = list(s)
+              end = len(res) - 1
+              reverse_sub(res, 0, n - 1)
+              reverse_sub(res, n, end)
+              reverse_sub(res, 0, end)
+              return ''.join(res)
+
+      # 同方法二
+      # 时间复杂度：O(n)
+      # 空间复杂度：O(n)，python的string为不可变，需要开辟同样大小的list空间来修改
+
+      #方法四：考虑不能用切片的情况下，利用模+下标实现
+      class Solution:
+          def reverseLeftWords(self, s: str, n: int) -> str:
+              new_s = ''
+              for i in range(len(s)):
+                  j = (i+n)%len(s)
+                  new_s = new_s + s[j]
+              return new_s
+      ```
+
+###### KMP
+
+      ```python
+      #时间 O(n+m)
+      // 方法一
+      class Solution:
+          def strStr(self, haystack: str, needle: str) -> int:
+              a=len(needle)
+              b=len(haystack)
+              if a==0:
+                  return 0
+              next=self.getnext(a,needle)
+              p=-1
+              for j in range(b):
+                  while p>=0 and needle[p+1]!=haystack[j]:
+                      p=next[p]
+                  if needle[p+1]==haystack[j]:
+                      p+=1
+                  if p==a-1:
+                      return j-a+1
+              return -1
+
+          def getnext(self,a,needle):
+              next=['' for i in range(a)]
+              k=-1
+              next[0]=k
+              for i in range(1,len(needle)):
+                  while (k>-1 and needle[k+1]!=needle[i]):
+                      k=next[k]
+                  if needle[k+1]==needle[i]:
+                      k+=1
+                  next[i]=k
+              return next
+      // 方法二
+      class Solution:
+          def strStr(self, haystack: str, needle: str) -> int:
+              a=len(needle)
+              b=len(haystack)
+              if a==0:
+                  return 0
+              i=j=0
+              next=self.getnext(a,needle)
+              while(i<b and j<a):
+                  if j==-1 or needle[j]==haystack[i]:
+                      i+=1
+                      j+=1
+                  else:
+                      j=next[j]
+              if j==a:
+                  return i-j
+              else:
+                  return -1
+
+          def getnext(self,a,needle):
+              next=['' for i in range(a)]
+              j,k=0,-1
+              next[0]=k
+              while(j<a-1):
+                  if k==-1 or needle[k]==needle[j]:
+                      k+=1
+                      j+=1
+                      next[j]=k
+                  else:
+                      k=next[k]
+              return next
+      ```
+
+###### 重复子字符串
+
+      ```python
+      class Solution:
+          def repeatedSubstringPattern(self, s: str) -> bool:  
+              if len(s) == 0:
+                  return False
+              nxt = [0] * len(s)
+              self.getNext(nxt, s)
+              if nxt[-1] != -1 and len(s) % (len(s) - (nxt[-1] + 1)) == 0:
+                  return True
+              return False
+
+          def getNext(self, nxt, s):
+              nxt[0] = -1
+              j = -1
+              for i in range(1, len(s)):
+                  while j >= 0 and s[i] != s[j+1]:
+                      j = nxt[j]
+                  if s[i] == s[j+1]:
+                      j += 1
+                  nxt[i] = j
+              return nxt
+
+      class Solution:
+          def repeatedSubstringPattern(self, s: str) -> bool:  
+              if len(s) == 0:
+                  return False
+              nxt = [0] * len(s)
+              self.getNext(nxt, s)
+              if nxt[-1] != 0 and len(s) % (len(s) - nxt[-1]) == 0:
+                  return True
+              return False
+
+          def getNext(self, nxt, s):
+              nxt[0] = 0
+              j = 0
+              for i in range(1, len(s)):
+                  while j > 0 and s[i] != s[j]:
+                      j = nxt[j - 1]
+                  if s[i] == s[j]:
+                      j += 1
+                  nxt[i] = j
+              return nxt
+      ```
+
+## 链表
+###### 移除链表元素
+
+      ```python
+      # Definition for singly-linked list.
+      # class ListNode:
+      #     def __init__(self, val=0, next=None):
+      #         self.val = val
+      #         self.next = next
+
+      #头插法 t0(n),s0(1)
+      class Solution:
+          def removeElements(self, head: ListNode, val: int) -> ListNode:
+              dummy_head = ListNode(next=head) #添加一个虚拟节点
+              cur = dummy_head
+              while(cur.next!=None):
+                  if(cur.next.val == val):
+                      cur.next = cur.next.next #删除cur.next节点
+                  else:
+                      cur = cur.next
+              return dummy_head.next
+      ```
+
+###### 翻转链表1
+
+      ```python
+      #双指针 迭代
+      # Definition for singly-linked list.
+      # class ListNode:
+      #     def __init__(self, val=0, next=None):
+      #         self.val = val
+      #         self.next = next
+      class Solution:
+          def reverseList(self, head: ListNode) -> ListNode:
+              cur = head   
+              pre = None
+              while(cur!=None):
+                  temp = cur.next # 保存一下 cur的下一个节点，因为接下来要改变cur->next
+                  cur.next = pre #反转
+                  #更新pre、cur指针
+                  pre = cur
+                  cur = temp
+              return pre
+
+      # 递归
+      # Definition for singly-linked list.
+      # class ListNode:
+      #     def __init__(self, val=0, next=None):
+      #         self.val = val
+      #         self.next = next
+      class Solution:
+          def reverseList(self, head: ListNode) -> ListNode:
+
+              def reverse(pre,cur):
+                  if not cur:
+                      return pre
+
+                  tmp = cur.next
+                  cur.next = pre
+
+                  return reverse(cur,tmp)
+
+              return reverse(None,head)
+      ```
+
+###### 翻转链表2
+
+      ```python
+      # Definition for singly-linked list.
+      # class ListNode:
+      #     def __init__(self, val=0, next=None):
+      #         self.val = val
+      #         self.next = next
+
+      # 时间 O(n) 空间O(1)
+      class Solution:
+          def swapPairs(self, head: ListNode) -> ListNode:
+              res = ListNode(next=head)
+              pre = res
+
+              # 必须有pre的下一个和下下个才能交换，否则说明已经交换结束了
+              while pre.next and pre.next.next:
+                  cur = pre.next
+                  post = pre.next.next
+
+                  # pre，cur，post对应最左，中间的，最右边的节点
+                  cur.next = post.next
+                  post.next = cur
+                  pre.next = post
+
+                  pre = pre.next.next
+              return res.next
+      ```
+
+###### 删除倒数N节点
+
+      ```python
+      # Definition for singly-linked list.
+      # class ListNode:
+      #     def __init__(self, val=0, next=None):
+      #         self.val = val
+      #         self.next = next
+      class Solution:
+          def removeNthFromEnd(self, head: ListNode, n: int) -> ListNode:
+              head_dummy = ListNode()
+              head_dummy.next = head
+
+              slow, fast = head_dummy, head_dummy
+              while(n!=0): #fast先往前走n步
+                  fast = fast.next
+                  n -= 1
+              while(fast.next!=None):
+                  slow = slow.next
+                  fast = fast.next
+              #fast 走到结尾后，slow的下一个节点为倒数第N个节点
+              slow.next = slow.next.next #删除
+              return head_dummy.next
+      ```
+
+###### 链表相交
+
+      ```python
+      # Definition for singly-linked list.
+      # class ListNode:
+      #     def __init__(self, x):
+      #         self.val = x
+      #         self.next = None
+
+      class Solution:
+          def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> ListNode:
+              """
+              根据快慢法则，走的快的一定会追上走得慢的。
+              在这道题里，有的链表短，他走完了就去走另一条链表，我们可以理解为走的快的指针。
+
+              那么，只要其中一个链表走完了，就去走另一条链表的路。如果有交点，他们最终一定会在同一个
+              位置相遇
+              """
+              cur_a, cur_b = headA, headB     # 用两个指针代替a和b
+
+
+              while cur_a != cur_b:
+                  cur_a = cur_a.next if cur_a else headB      # 如果a走完了，那么就切换到b走
+                  cur_b = cur_b.next if cur_b else headA      # 同理，b走完了就切换到a
+
+              return cur_a
+      ```
+
+###### 环入口
+
+      ```python
+      class Solution:
+          def detectCycle(self, head: ListNode) -> ListNode:
+              slow, fast = head, head
+              while fast and fast.next:
+                  slow = slow.next
+                  fast = fast.next.next
+                  # 如果相遇
+                  if slow == fast:
+                      p = head
+                      q = slow
+                      while p!=q:
+                          p = p.next
+                          q = q.next
+                      #你也可以return q
+                      return p
+
+              return None
+      ```
+
+## 二叉树
+###### 递归遍历
 
       ```python
       # 前序遍历-递归-LC144_二叉树的前序遍历
@@ -3742,7 +3743,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return result
       ```
 
-  - 迭代遍历
+###### 迭代遍历
 
       ```python
       # 前序遍历-迭代-LC144_二叉树的前序遍历
@@ -3807,7 +3808,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return result[::-1]
       ```
 
-  - 层序遍历1
+###### 层序遍历1
 
       ```python
       class Solution:
@@ -3831,7 +3832,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return out_list
       ```
 
-  - 层序遍历2
+###### 层序遍历2
 
       ```python
       class Solution:
@@ -3860,7 +3861,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
       # 内存消耗：15.2 MB, 在所有 Python3 提交中击败了63.76%的用户
       ```
 
-  - 二叉树右视图
+###### 二叉树右视图
 
       ```python
       class Solution:
@@ -3894,7 +3895,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
       # 内存消耗：14.6 MB, 在所有 Python3 提交中击败了96.65%的用户
       ```
 
-  - 二叉树层平均值
+###### 二叉树层平均值
 
       ```python
       class Solution:
@@ -3926,7 +3927,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
       # 内存消耗：17 MB, 在所有 Python3 提交中击败了89.68%的用户
       ```
 
-  - N叉树层序遍历
+###### N叉树层序遍历
 
       ```python
       class Solution:
@@ -3976,7 +3977,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
       # 内存消耗：16.5 MB, 在所有 Python3 提交中击败了89.19%的用户
       ```
 
-  - 每个树找最大值
+###### 每个树找最大值
 
       ```python
       class Solution:
@@ -3997,7 +3998,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return out_list
       ```
 
-  - 填充每个节点的下一个右侧节点指针1
+###### 填充每个节点的下一个右侧节点指针1
 
       ```python
       # 层序遍历解法
@@ -4033,7 +4034,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return root
       ```
 
-  - 填充每个节点的下一个右侧节点指针2
+###### 填充每个节点的下一个右侧节点指针2
 
       ```python
       # 层序遍历解法
@@ -4076,7 +4077,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return root
       ```
 
-  - 二叉树最大深度
+###### 二叉树最大深度
 
       ```python
       class Solution:
@@ -4101,7 +4102,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return len(result)
       ```
 
-  - 二叉树最小深度
+###### 二叉树最小深度
 
       ```python
       # Definition for a binary tree node.
@@ -4131,7 +4132,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return 0
       ```
 
-  - 翻转二叉树
+###### 翻转二叉树
 
       ```python
       # 递归前序
@@ -4179,7 +4180,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return root
       ```
 
-  - 对称二叉树
+###### 对称二叉树
 
       ```python
       # 递归
@@ -4250,7 +4251,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return True
       ```
 
-- 完全二叉树的节点个数
+###### 完全二叉树的节点个数
 
   ```python
   # 递归
@@ -4285,7 +4286,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
           return result
   ```
 
-- 平衡二叉树
+###### 平衡二叉树
 
   ```python
   # 递归
@@ -4341,7 +4342,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
           return result
   ```
 
-- 二叉树所有路径
+###### 二叉树所有路径
 
   ```python
   class Solution:
@@ -4363,7 +4364,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
           return ["->".join(list(map(str,i))) for i in res]
   ```
 
-- 左叶子之和
+###### 左叶子之和
 
   ```python
   # 递归
@@ -4407,7 +4408,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
           return res
   ```
 
-- 左下角
+###### 左下角
 
   ```python
   # 递归
@@ -4452,8 +4453,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
                       queue.append(cur.right)
           return result
   ```
-
-- 路径总和1
+###### 路径总和1
 
   ```python
   # 递归
@@ -4502,7 +4502,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
           return false
   ```
 
-- 路径总和2
+###### 路径总和2
 
   ```python
   # 递归
@@ -4538,7 +4538,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
           return result
   ```
 
-- 构造二叉树
+###### 构造二叉树
 
   ```python
   # 前序+中序
@@ -4600,7 +4600,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
           return root
   ```
 
-- 数组构造最大二叉树
+###### 数组构造最大二叉树
 
   ```python
   //递归法
@@ -4616,7 +4616,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
           return root
   ```
 
-- 合并二叉树
+###### 合并二叉树
 
   ```python
   # 递归 前序遍历
