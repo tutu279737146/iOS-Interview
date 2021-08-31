@@ -146,7 +146,7 @@
     - [二叉树所有路径](#二叉树所有路径)
     - [左叶子之和](#左叶子之和)
     - [左下角](#左下角)
-    - [路径总和1](#路径总和1
+    - [路径总和1](#路径总和1)
     - [路径总和2](#路径总和2)
     - [构造二叉树](#构造二叉树)
     - [数组构造二叉树](#数组构造二叉树)
@@ -3103,6 +3103,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return ans
       ```
 
+
 #### 数组
 ###### 二分查找
 
@@ -3241,7 +3242,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return matrix
       ```
 
-## 字符串
+#### 字符串
 ###### 翻转字符串1
 
       ```python
@@ -3523,7 +3524,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return nxt
       ```
 
-## 链表
+#### 链表
 ###### 移除链表元素
 
       ```python
@@ -3692,7 +3693,7 @@ if (cachedImage && options & SDWebImageRefreshCached) {
               return None
       ```
 
-## 二叉树
+#### 二叉树
 ###### 递归遍历
 
       ```python
