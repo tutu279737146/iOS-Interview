@@ -98,6 +98,61 @@
 - [SDWebImage](#SDWebImage)
   - [主要构成](#主要构成)
   - [相关面试问题](#相关面试问题)  
+
+- [算法](#算法)
+  - [求和](#求和)
+    - [俩数之和](#俩数之和)
+    - [三数之和](#三数之和)
+    - [四数之和](#四数之和)
+ - [数组](#数组)
+    - [二分查找](#二分查找)
+    - [移除元素](#移除元素)
+    - [数组平方](#数组平方) 
+    - [长度最小子数组](#长度最小子数组) 
+    - [螺旋矩阵](#螺旋矩阵)
+  - [字符串](#字符串)
+    - [翻转字符串1](#翻转字符串1)
+    - [翻转字符串2](#翻转字符串2)
+    - [替换空格](#替换空格)
+    - [翻转单词](#翻转单词)
+    - [左旋转字符串](#左旋转字符串)
+    - [KMP](#KMP)
+    - [重复子字符串](#重复子字符串)
+ 
+  - [链表](#链表)
+    - [移除链表元素](#移除链表元素)
+    - [翻转链表1](#翻转链表1)
+    - [翻转链表2](#翻转链表2)
+    - [删除倒数N节点](#删除倒数N节点)
+    - [链表相交](#链表相交)
+    - [环入口](#环入口)
+  - [二叉树](#二叉树)
+    - [递归遍历](#递归遍历)
+    - [迭代遍历](#迭代遍历)
+    - [层序遍历1](#层序遍历1)
+    - [层序遍历2](#层序遍历2)
+    - [二叉树右视图](#二叉树右视图)
+    - [二叉树层平均值](#二叉树层平均值)
+    - [N叉树层次遍历](#N叉树层次遍历)
+    - [每个数找最大值](#每个数找最大值)
+    - [填充每个节点的下一个右侧节点指针1](#填充每个节点的下一个右侧节点指针1)
+    - [填充每个节点的下一个右侧节点指针2](#填充每个节点的下一个右侧节点指针2)
+    - [二叉树最大深度](#二叉树最大深度)
+    - [二叉树最小深度](#二叉树最小深度)
+    - [翻转二叉树](#翻转二叉树)
+    - [对称二叉树](#对称二叉树)
+    - [完全二叉树的节点个数](#完全二叉树的节点个数)
+    - [平衡二叉树](#平衡二叉树)
+    - [二叉树所有路径](#二叉树所有路径)
+    - [左叶子之和](#左叶子之和)
+    - [左下角](#左下角)
+    - [路径总和1](#路径总和1
+    - [路径总和2](#路径总和2)
+    - [构造二叉树](#构造二叉树)
+    - [数组构造二叉树](#数组构造二叉树)
+    - [合并二叉树](#合并二叉树)
+
+
 ## UI视图相关
 
 #### UIView跟CALayer
@@ -2942,53 +2997,53 @@ if (cachedImage && options & SDWebImageRefreshCached) {
   
   
 
-# 算法
-  - 求和
-      - 俩数之和
+## 算法
+#### 求和
+###### 俩数之和
 
-          ```python
-          class Solution:
-              def twoSum(self, nums: List[int], target: int) -> List[int]:
-                  hashmap={}
-                  for ind,num in enumerate(nums):
-                      hashmap[num] = ind
-                  for i,num in enumerate(nums):
-                      j = hashmap.get(target - num)
-                      if j is not None and i!=j:
-                          return [i,j]
-          ```
+  ```
+  class Solution:
+      def twoSum(self, nums: List[int], target: int) -> List[int]:
+          hashmap={}
+          for ind,num in enumerate(nums):
+              hashmap[num] = ind
+          for i,num in enumerate(nums):
+              j = hashmap.get(target - num)
+              if j is not None and i!=j:
+                  return [i,j]
+  ```
 
-      - 三数之和
+###### 三数之和
 
-          ```python
-          class Solution:
-              def threeSum(self, nums):
-                  ans = []
-                  n = len(nums)
-                  nums.sort()
-                  for i in range(n):
-                      left = i + 1
-                      right = n - 1
-                      if nums[i] > 0:
-                          break
-                      if i >= 1 and nums[i] == nums[i - 1]:
-                          continue
-                      while left < right:
-                          total = nums[i] + nums[left] + nums[right]
-                          if total > 0:
-                              right -= 1
-                          elif total < 0:
-                              left += 1
-                          else:
-                              ans.append([nums[i], nums[left], nums[right]])
-                              while left != right and nums[left] == nums[left + 1]: left += 1
-                              while left != right and nums[right] == nums[right - 1]: right -= 1
-                              left += 1
-                              right -= 1
-                  return ans
-          ```
+  ```
+  class Solution:
+      def threeSum(self, nums):
+          ans = []
+          n = len(nums)
+          nums.sort()
+          for i in range(n):
+              left = i + 1
+              right = n - 1
+              if nums[i] > 0:
+                  break
+              if i >= 1 and nums[i] == nums[i - 1]:
+                  continue
+              while left < right:
+                  total = nums[i] + nums[left] + nums[right]
+                  if total > 0:
+                      right -= 1
+                  elif total < 0:
+                      left += 1
+                  else:
+                      ans.append([nums[i], nums[left], nums[right]])
+                      while left != right and nums[left] == nums[left + 1]: left += 1
+                      while left != right and nums[right] == nums[right - 1]: right -= 1
+                      left += 1
+                      right -= 1
+          return ans
+  ```
 
-      - 四树之和
+###### 四树之和
 
           ```python
             # 双指针法
